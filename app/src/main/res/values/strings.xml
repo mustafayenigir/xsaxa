@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">SCJ Eğitim</string>
+
+    <string name="create_title">Şifre Oluştur</string>
+    <string name="enter_title">Şifreyi Gir</string>
+
+    <string name="password_hint">Şifre</string>
+    <string name="password_confirm_hint">Şifre (tekrar)</string>
+
+    <string name="create_button">Oluştur ve Devam Et</string>
+    <string name="enter_button">Giriş Yap</string>
+
+    <string name="create_hint">En az 4 karakterli bir şifre belirleyin. Şifrenizi unutursanız uygulamayı silip yeniden kurmanız gerekir.</string>
+
+    <string name="err_empty">Lütfen şifre girin.</string>
+    <string name="err_short">Şifre en az 4 karakter olmalı.</string>
+    <string name="err_mismatch">Şifreler aynı değil.</string>
+    <string name="err_wrong">Hatalı şifre.</string>
+
+    <string name="channel_name">Oynatma</string>
+    <string name="channel_desc">Ekran kapalıyken içeriğin çalışmaya devam etmesini sağlar.</string>
+    <string name="notif_text">İçerik arka planda açık tutuluyor</string>
+</resources>
