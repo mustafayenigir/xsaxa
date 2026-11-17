@@ -15,6 +15,16 @@ android {
         versionName = "1.0"
     }
 
+    // Her derlemede aynı imza kullanılsın ki yeni APK eskisinin üzerine kurulabilsin.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

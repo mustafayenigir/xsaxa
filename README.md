@@ -1,4 +1,4 @@
-# SCJ Eğitim — Android Uygulaması
+# Meyvem — Android Uygulaması
 
 `https://scjegitim.blogspot.com` sitesini açan, şifre kilitli, ekran görüntüsü engelli
 ve ekran kapanınca sesi devam ettiren tek görevli bir Android uygulaması.
