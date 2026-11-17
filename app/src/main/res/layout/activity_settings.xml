@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Başlık satırı -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/backButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/back" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/settings_title"
+                android:textColor="@color/on_background"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- SES -->
+        <TextView
+            style="@style/SettingsSection"
+            android:text="@string/section_audio" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchKeepAudio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/keep_audio_title"
+            android:textColor="@color/on_background"
+            android:textSize="16sp" />
+
+        <TextView
+            style="@style/SettingsHint"
+            android:text="@string/keep_audio_desc" />
+
+        <Button
+            android:id="@+id/batteryButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/battery_button" />
+
+        <TextView
+            style="@style/SettingsHint"
+            android:text="@string/battery_hint" />
+
+        <!-- GÖRÜNÜM -->
+        <TextView
+            style="@style/SettingsSection"
+            android:text="@string/section_theme" />
+
+        <RadioGroup
+            android:id="@+id/themeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/themeSystem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/theme_system"
+                android:textColor="@color/on_background" />
+
+            <RadioButton
+                android:id="@+id/themeLight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/theme_light"
+                android:textColor="@color/on_background" />
+
+            <RadioButton
+                android:id="@+id/themeDark"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/theme_dark"
+                android:textColor="@color/on_background" />
+        </RadioGroup>
+
+        <!-- YAZI BOYUTU -->
+        <TextView
+            style="@style/SettingsSection"
+            android:text="@string/section_font" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/zoomMinus"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="64dp"
+                android:text="A−" />
+
+            <SeekBar
+                android:id="@+id/zoomSeek"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/zoomPlus"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="64dp"
+                android:text="A+" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/zoomLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="%100"
+                android:textColor="@color/on_background"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/zoomReset"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/font_reset" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/zoomPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/font_preview"
+            android:textColor="@color/on_background"
+            android:textSize="16sp" />
+    </LinearLayout>
+</ScrollView>

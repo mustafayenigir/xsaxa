@@ -4,7 +4,7 @@
     android:layout_height="match_parent">
 
     <!-- Siteyi gösteren WebView (kilit açılınca görünür) -->
-    <WebView
+    <com.scjegitim.app.BackgroundWebView
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -76,4 +76,39 @@
                 android:textSize="14sp" />
         </LinearLayout>
     </ScrollView>
+
+    <!-- Şifre ekranındaki Ayarlar düğmesi (sağ üst) -->
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/menu_settings"
+        android:src="@drawable/ic_settings" />
+
+    <!-- Site açıkken küçük menü düğmesi (sağ alt, yarı saydam) -->
+    <ImageButton
+        android:id="@+id/menuButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="96dp"
+        android:layout_marginEnd="10dp"
+        android:alpha="0.55"
+        android:background="@drawable/bg_fab"
+        android:contentDescription="@string/menu_open"
+        android:src="@drawable/ic_more"
+        android:visibility="gone" />
+
+    <!-- Siyah ekran modu: tüm ekranı kaplar, çift dokunuşla kapanır -->
+    <View
+        android:id="@+id/blackOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone" />
 </FrameLayout>

@@ -1,0 +1,7 @@
+<resources>
+    <!-- Gece modu -->
+    <color name="background">#0F1522</color>
+    <color name="on_background">#E8EDF5</color>
+    <color name="on_background_muted">#9AA6B8</color>
+    <color name="accent_text">#8FB4F0</color>
+</resources>

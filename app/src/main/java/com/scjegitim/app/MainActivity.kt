@@ -3,8 +3,11 @@ package com.scjegitim.app
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebChromeClient
@@ -13,12 +16,26 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import java.security.MessageDigest
 import java.security.SecureRandom
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        // Tema değişince Activity yeniden oluşur; kilit açık kalsın ve sayfa kaybolmasın.
+        // Uygulama süreci tamamen kapanırsa bu değerler sıfırlanır ve şifre yeniden sorulur.
+        private var sessionUnlocked = false
+        private var lastUrl: String? = null
+    }
 
     // Uygulamanın açacağı tek adres
     private val siteUrl = "https://scjegitim.blogspot.com"
@@ -28,21 +45,24 @@ class MainActivity : AppCompatActivity() {
     private val keyHash = "pwd_hash"
     private val keySalt = "pwd_salt"
 
-    private lateinit var webView: WebView
+    private lateinit var webView: BackgroundWebView
     private lateinit var lockContainer: View
     private lateinit var lockTitle: TextView
     private lateinit var passwordInput: EditText
     private lateinit var passwordConfirm: EditText
     private lateinit var unlockButton: Button
     private lateinit var lockMessage: TextView
+    private lateinit var settingsButton: ImageButton
+    private lateinit var menuButton: ImageButton
+    private lateinit var blackOverlay: View
 
     private var unlocked = false
+    private var blackMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // === EKRAN GÖRÜNTÜSÜ / EKRAN KAYDI ENGELİ (banka uygulamaları gibi) ===
-        // Tüm uygulama boyunca geçerlidir. Çoklu görev ekranında da içerik gizlenir.
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
@@ -57,17 +77,26 @@ class MainActivity : AppCompatActivity() {
         passwordConfirm = findViewById(R.id.passwordConfirm)
         unlockButton = findViewById(R.id.unlockButton)
         lockMessage = findViewById(R.id.lockMessage)
+        settingsButton = findViewById(R.id.settingsButton)
+        menuButton = findViewById(R.id.menuButton)
+        blackOverlay = findViewById(R.id.blackOverlay)
 
         setupWebView()
+        setupBlackOverlay()
         requestNotificationPermissionIfNeeded()
 
         val prefs = getSharedPreferences(prefsName, MODE_PRIVATE)
         if (prefs.contains(keyHash)) showEnterMode() else showCreateMode()
 
         unlockButton.setOnClickListener { handleUnlock() }
+        settingsButton.setOnClickListener { openSettings() }
+        menuButton.setOnClickListener { showMenu(it) }
+
+        if (sessionUnlocked) openSite(lastUrl ?: siteUrl)
     }
 
-    /** İlk kez: şifre oluşturma ekranı */
+    // ---------------- Şifre ekranı ----------------
+
     private fun showCreateMode() {
         lockTitle.setText(R.string.create_title)
         passwordConfirm.visibility = View.VISIBLE
@@ -75,7 +104,6 @@ class MainActivity : AppCompatActivity() {
         lockMessage.setText(R.string.create_hint)
     }
 
-    /** Sonraki açılışlar: şifre girme ekranı */
     private fun showEnterMode() {
         lockTitle.setText(R.string.enter_title)
         passwordConfirm.visibility = View.GONE
@@ -109,13 +137,13 @@ class MainActivity : AppCompatActivity() {
                 .putString(keySalt, salt)
                 .putString(keyHash, hash)
                 .apply()
-            openSite()
+            openSite(siteUrl)
         } else {
             // --- ŞİFRE DOĞRULAMA ---
             val salt = prefs.getString(keySalt, "") ?: ""
             val hash = hashPassword(pwd, salt)
             if (hash == prefs.getString(keyHash, null)) {
-                openSite()
+                openSite(siteUrl)
             } else {
                 lockMessage.setText(R.string.err_wrong)
                 passwordInput.text?.clear()
@@ -123,23 +151,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openSite() {
+    private fun openSite(url: String) {
         unlocked = true
+        sessionUnlocked = true
         passwordInput.text?.clear()
         passwordConfirm.text?.clear()
         lockContainer.visibility = View.GONE
+        settingsButton.visibility = View.GONE
         webView.visibility = View.VISIBLE
+        menuButton.visibility = View.VISIBLE
 
-        // Ekran kapanınca sitenin/ses akışının kapanmaması için ön plan servisi
-        val svc = Intent(this, AudioKeepAliveService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(svc)
-        } else {
-            startService(svc)
-        }
-
-        webView.loadUrl(siteUrl)
+        applySettings()
+        startKeepAliveService()
+        webView.loadUrl(url)
     }
+
+    /** Uygulamayı yeniden şifre ekranına döndürür; ses durur. */
+    private fun lockApp() {
+        exitBlackMode()
+        unlocked = false
+        sessionUnlocked = false
+        lastUrl = null
+        webView.loadUrl("about:blank")
+        webView.visibility = View.GONE
+        menuButton.visibility = View.GONE
+        lockContainer.visibility = View.VISIBLE
+        settingsButton.visibility = View.VISIBLE
+        stopService(Intent(this, AudioKeepAliveService::class.java))
+        showEnterMode()
+    }
+
+    // ---------------- WebView ----------------
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
@@ -157,8 +199,47 @@ class MainActivity : AppCompatActivity() {
         s.cacheMode = WebSettings.LOAD_DEFAULT
 
         // Bağlantılar uygulama içinde açılsın (dış tarayıcıya atmasın)
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (url != null && url != "about:blank") lastUrl = url
+            }
+        }
         webView.webChromeClient = WebChromeClient()
+    }
+
+    /** Ayarlar ekranındaki tercihleri WebView'e uygular. */
+    private fun applySettings() {
+        webView.settings.textZoom = AppSettings.textZoom(this)
+        webView.keepBackground = AppSettings.keepAudio(this)
+        applyWebDarkMode()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun applyWebDarkMode() {
+        val dark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                WebSettingsCompat.setAlgorithmicDarkeningAllowed(webView.settings, dark)
+            } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                WebSettingsCompat.setForceDark(
+                    webView.settings,
+                    if (dark) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF
+                )
+            }
+        } catch (_: Throwable) {
+            // Eski WebView sürümünde desteklenmiyorsa sessizce geç
+        }
+    }
+
+    private fun startKeepAliveService() {
+        val svc = Intent(this, AudioKeepAliveService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svc)
+        } else {
+            startService(svc)
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
@@ -171,23 +252,108 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- Arka planda çalmaya devam: ekran kapanınca WebView'i DURAKLATMIYORUZ ---
-    override fun onPause() {
-        super.onPause()
-        // Bilerek webView.onPause() çağrılmıyor; böylece ses devam eder.
+    // ---------------- Menü ve ayarlar ----------------
+
+    private fun openSettings() {
+        startActivity(Intent(this, SettingsActivity::class.java))
     }
+
+    private fun showMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, 1, 0, R.string.menu_settings)
+        popup.menu.add(0, 2, 1, R.string.menu_black)
+        popup.menu.add(0, 3, 2, R.string.menu_lock)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> openSettings()
+                2 -> enterBlackMode()
+                3 -> lockApp()
+            }
+            true
+        }
+        popup.show()
+    }
+
+    // ---------------- Siyah ekran modu ----------------
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupBlackOverlay() {
+        val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                exitBlackMode()
+                return true
+            }
+        })
+        blackOverlay.setOnTouchListener { _, ev ->
+            detector.onTouchEvent(ev)
+            true
+        }
+    }
+
+    /** Ekranı siyaha çevirir, parlaklığı en aza indirir; ses çalmaya devam eder. */
+    private fun enterBlackMode() {
+        if (blackMode) return
+        blackMode = true
+        blackOverlay.visibility = View.VISIBLE
+        menuButton.visibility = View.GONE
+
+        val lp = window.attributes
+        lp.screenBrightness = 0f
+        window.attributes = lp
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+
+        Toast.makeText(this, R.string.black_hint, Toast.LENGTH_LONG).show()
+    }
+
+    private fun exitBlackMode() {
+        if (!blackMode) return
+        blackMode = false
+        blackOverlay.visibility = View.GONE
+        if (unlocked) menuButton.visibility = View.VISIBLE
+
+        val lp = window.attributes
+        lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        window.attributes = lp
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.show(WindowInsetsCompat.Type.systemBars())
+    }
+
+    // ---------------- Yaşam döngüsü ----------------
 
     override fun onResume() {
         super.onResume()
-        if (unlocked) webView.onResume()
+        if (unlocked) {
+            applySettings()
+            webView.onResume()
+            webView.resumeTimers()
+            // Ayar değiştiyse kilitleri (wake lock) yeniden değerlendir
+            startKeepAliveService()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Bilerek webView.onPause() çağrılmıyor; böylece ekran kapanınca ses devam eder.
+        if (unlocked && AppSettings.keepAudio(this)) webView.resumeTimers()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Ekran kapanıp tekrar açıldığında siyah ekranda takılı kalmasın
+        if (blackMode) exitBlackMode()
     }
 
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        if (unlocked && webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
+        when {
+            blackMode -> exitBlackMode()
+            unlocked && webView.canGoBack() -> webView.goBack()
+            else -> super.onBackPressed()
         }
     }
 
