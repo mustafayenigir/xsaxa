@@ -3,6 +3,10 @@ name: APK Derle
 on:
   push:
     branches: [ main, master ]
+    # Sadece Windows (desktop/) değişince Android APK yeniden derlenmesin
+    paths-ignore:
+      - 'desktop/**'
+      - '.github/workflows/desktop.yml'
   workflow_dispatch:
 
 permissions:

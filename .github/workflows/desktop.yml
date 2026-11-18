@@ -1,0 +1,56 @@
+name: Windows Derle
+
+# Sadece desktop/ klasörü değişince (veya elle) çalışır.
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Node 20 kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bagimliliklari kur
+        run: npm install --no-audit --no-fund
+
+      - name: Meyvem.exe derle (tasinabilir)
+        run: npx electron-builder --win portable --publish never
+
+      - name: exe'yi yukle (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: meyvem-windows
+          path: desktop/dist/Meyvem.exe
+          if-no-files-found: error
+
+      # Sabit indirme baglantisi:
+      # https://github.com/<kullanici>/<depo>/releases/download/windows/Meyvem.exe
+      # --latest=false: Android APK'nin "releases/latest" baglantisini bozmaz.
+      - name: Release olarak yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete windows --cleanup-tag --yes || true
+          gh release create windows dist/Meyvem.exe \
+            --title "Meyvem Windows (son surum)" \
+            --notes "Otomatik derleme: ${GITHUB_SHA}" \
+            --target "${GITHUB_SHA}" \
+            --latest=false

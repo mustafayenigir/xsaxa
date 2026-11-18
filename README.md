@@ -53,3 +53,17 @@ APK şurada oluşur: `app/build/outputs/apk/debug/app-debug.apk`
 - **Açılacak site:** `app/src/main/java/com/scjegitim/app/MainActivity.kt` içindeki `siteUrl`.
 - **Uygulama adı:** `app/src/main/res/values/strings.xml` içindeki `app_name`.
 - **Renkler:** `app/src/main/res/values/colors.xml`.
+
+---
+
+## Windows uygulaması (Meyvem.exe)
+
+`desktop/` klasöründe aynı uygulamanın Windows sürümü bulunur (Electron). Kurulum gerektirmez,
+tek dosyalık taşınabilir `Meyvem.exe` olarak derlenir:
+
+https://github.com/mustafayenigir/xsaxa/releases/download/windows/Meyvem.exe
+
+- Şifre kilidi, ekran görüntüsü/kaydı engeli, arka planda ses, gece/gündüz, yazı boyutu, siyah ekran.
+- Menüden: Meyvem → Ayarlar (Ctrl+,), Siyah ekran (Ctrl+B), Kilitle (Ctrl+L). Yazı boyutu: Ctrl + / Ctrl -.
+- Şifre `%APPDATA%\Meyvem` altında saklanır. Unutulursa bu klasörü silmek şifreyi sıfırlar.
+- İmzasız olduğu için ilk açılışta Windows SmartScreen uyarısı çıkabilir: "Ek bilgi" → "Yine de çalıştır".

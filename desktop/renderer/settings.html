@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'">
+  <title>Ayarlar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { padding: 20px 24px; }
+    label.opt { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; font-size: 15px; }
+    input[type="radio"], input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+    .zoomrow { display: flex; align-items: center; gap: 10px; }
+    .zoomrow input[type="range"] { flex: 1; accent-color: var(--accent); }
+    .zoomrow button { min-width: 52px; }
+    .zoomlabel { font-weight: 700; margin-top: 6px; }
+    .bottom { margin-top: 28px; }
+  </style>
+</head>
+<body>
+  <h1 style="text-align:left">Ayarlar</h1>
+
+  <h2>Ses</h2>
+  <label class="opt"><input type="checkbox" id="keepAudio"> Ekran kapanınca / pencere küçülünce sesi sürdür</label>
+  <p class="hint">Açıkken bilgisayar uyku moduna geçmez ve sitedeki ses/video çalmaya devam eder. Ekranı kapatsanız bile ses gelir.</p>
+
+  <h2>Görünüm</h2>
+  <label class="opt"><input type="radio" name="theme" value="system"> Sistemle aynı</label>
+  <label class="opt"><input type="radio" name="theme" value="light"> Gündüz modu</label>
+  <label class="opt"><input type="radio" name="theme" value="dark"> Gece modu</label>
+
+  <h2>Yazı boyutu</h2>
+  <div class="zoomrow">
+    <button id="minus">A−</button>
+    <input type="range" id="zoom" min="50" max="200" step="10">
+    <button id="plus">A+</button>
+  </div>
+  <div class="zoomlabel" id="zoomLabel">%100</div>
+  <button class="link" id="reset">Varsayılan</button>
+
+  <div class="bottom"><button class="primary" id="close">Kapat</button></div>
+  <script src="settings.js"></script>
+</body>
+</html>
