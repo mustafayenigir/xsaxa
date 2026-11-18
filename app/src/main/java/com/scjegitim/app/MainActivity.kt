@@ -17,12 +17,12 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnLayout
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import java.security.MessageDigest
@@ -53,7 +53,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var unlockButton: Button
     private lateinit var lockMessage: TextView
     private lateinit var settingsButton: ImageButton
-    private lateinit var menuButton: ImageButton
+    private lateinit var menuButton: AssistiveTouchView
+    private lateinit var menuPanel: View
+    private lateinit var menuScrim: View
+    private lateinit var rootLayout: View
     private lateinit var blackOverlay: View
 
     private var unlocked = false
@@ -79,6 +82,9 @@ class MainActivity : AppCompatActivity() {
         lockMessage = findViewById(R.id.lockMessage)
         settingsButton = findViewById(R.id.settingsButton)
         menuButton = findViewById(R.id.menuButton)
+        menuPanel = findViewById(R.id.menuPanel)
+        menuScrim = findViewById(R.id.menuScrim)
+        rootLayout = findViewById(R.id.rootLayout)
         blackOverlay = findViewById(R.id.blackOverlay)
 
         setupWebView()
@@ -90,7 +96,7 @@ class MainActivity : AppCompatActivity() {
 
         unlockButton.setOnClickListener { handleUnlock() }
         settingsButton.setOnClickListener { openSettings() }
-        menuButton.setOnClickListener { showMenu(it) }
+        setupFloatingButton()
 
         if (sessionUnlocked) openSite(lastUrl ?: siteUrl)
     }
@@ -159,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         lockContainer.visibility = View.GONE
         settingsButton.visibility = View.GONE
         webView.visibility = View.VISIBLE
-        menuButton.visibility = View.VISIBLE
+        showFloatingButton()
 
         applySettings()
         startKeepAliveService()
@@ -174,6 +180,7 @@ class MainActivity : AppCompatActivity() {
         lastUrl = null
         webView.loadUrl("about:blank")
         webView.visibility = View.GONE
+        hideMenuPanel()
         menuButton.visibility = View.GONE
         lockContainer.visibility = View.VISIBLE
         settingsButton.visibility = View.VISIBLE
@@ -258,20 +265,83 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
-    private fun showMenu(anchor: View) {
-        val popup = PopupMenu(this, anchor)
-        popup.menu.add(0, 1, 0, R.string.menu_settings)
-        popup.menu.add(0, 2, 1, R.string.menu_black)
-        popup.menu.add(0, 3, 2, R.string.menu_lock)
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                1 -> openSettings()
-                2 -> enterBlackMode()
-                3 -> lockApp()
-            }
-            true
+    // ---------------- Yüzen düğme (AssistiveTouch) ----------------
+
+    private fun setupFloatingButton() {
+        menuButton.restore(AppSettings.fabSide(this), AppSettings.fabY(this))
+
+        menuButton.onSingleTap = { toggleMenuPanel() }
+        menuButton.onDoubleTap = {
+            hideMenuPanel()
+            enterBlackMode()
         }
-        popup.show()
+        menuButton.onDragStart = { hideMenuPanel() }
+        menuButton.onPositionChanged = { side, y -> AppSettings.setFabPosition(this, side, y) }
+
+        // Ekran döndürülünce / boyutu değişince düğmeyi yeniden yerleştir
+        rootLayout.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
+            if ((r - l) != (oldR - oldL) || (b - t) != (oldB - oldT)) {
+                menuButton.applyPosition()
+                hideMenuPanel()
+            }
+        }
+
+        menuScrim.setOnClickListener { hideMenuPanel() }
+        findViewById<View>(R.id.menuItemSettings).setOnClickListener {
+            hideMenuPanel()
+            openSettings()
+        }
+        findViewById<View>(R.id.menuItemBlack).setOnClickListener {
+            hideMenuPanel()
+            enterBlackMode()
+        }
+        findViewById<View>(R.id.menuItemLock).setOnClickListener {
+            hideMenuPanel()
+            lockApp()
+        }
+    }
+
+    private fun showFloatingButton() {
+        menuButton.visibility = View.VISIBLE
+        menuButton.doOnLayout { menuButton.applyPosition() }
+    }
+
+    private fun toggleMenuPanel() {
+        if (menuPanel.visibility == View.VISIBLE) hideMenuPanel() else showMenuPanel()
+    }
+
+    /** Düğmenin yanında (ekran kenarının iç tarafında) küçük pencereyi açar. */
+    private fun showMenuPanel() {
+        val density = resources.displayMetrics.density
+        val gap = 8f * density
+        val edge = 8f * density
+
+        menuPanel.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val pw = menuPanel.measuredWidth.toFloat()
+        val ph = menuPanel.measuredHeight.toFloat()
+
+        val bx = menuButton.x
+        val by = menuButton.y
+        val bw = menuButton.width.toFloat()
+        val bh = menuButton.height.toFloat()
+
+        var px = if (menuButton.side == 1) bx - pw - gap else bx + bw + gap
+        var py = by + bh / 2f - ph / 2f
+        px = px.coerceIn(edge, (rootLayout.width - pw - edge).coerceAtLeast(edge))
+        py = py.coerceIn(edge, (rootLayout.height - ph - edge).coerceAtLeast(edge))
+
+        menuPanel.x = px
+        menuPanel.y = py
+        menuScrim.visibility = View.VISIBLE
+        menuPanel.visibility = View.VISIBLE
+    }
+
+    private fun hideMenuPanel() {
+        menuPanel.visibility = View.GONE
+        menuScrim.visibility = View.GONE
     }
 
     // ---------------- Siyah ekran modu ----------------
@@ -294,6 +364,7 @@ class MainActivity : AppCompatActivity() {
     private fun enterBlackMode() {
         if (blackMode) return
         blackMode = true
+        hideMenuPanel()
         blackOverlay.visibility = View.VISIBLE
         menuButton.visibility = View.GONE
 
@@ -312,7 +383,7 @@ class MainActivity : AppCompatActivity() {
         if (!blackMode) return
         blackMode = false
         blackOverlay.visibility = View.GONE
-        if (unlocked) menuButton.visibility = View.VISIBLE
+        if (unlocked) showFloatingButton()
 
         val lp = window.attributes
         lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
@@ -351,6 +422,7 @@ class MainActivity : AppCompatActivity() {
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
         when {
+            menuPanel.visibility == View.VISIBLE -> hideMenuPanel()
             blackMode -> exitBlackMode()
             unlocked && webView.canGoBack() -> webView.goBack()
             else -> super.onBackPressed()

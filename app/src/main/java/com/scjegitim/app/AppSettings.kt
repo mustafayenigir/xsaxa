@@ -36,6 +36,13 @@ object AppSettings {
         prefs(c).edit().putInt("text_zoom", v.coerceIn(ZOOM_MIN, ZOOM_MAX)).apply()
     }
 
+    // Yüzen düğmenin konumu: 0=sol 1=sağ kenar, dikey oran 0..1
+    fun fabSide(c: Context): Int = prefs(c).getInt("fab_side", 1)
+    fun fabY(c: Context): Float = prefs(c).getFloat("fab_y", 0.7f)
+    fun setFabPosition(c: Context, side: Int, yFraction: Float) {
+        prefs(c).edit().putInt("fab_side", side).putFloat("fab_y", yFraction).apply()
+    }
+
     fun applyNightMode(c: Context) {
         val mode = when (themeMode(c)) {
             THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
