@@ -6,7 +6,8 @@ Uygulamalar `apps_script/Code.gs` dosyasındaki kodla konuşur. Bu kodu **bir ke
 1. E-Tablonuzu açın → **Uzantılar → Apps Script**.
 2. Soldaki `Code.gs` içindeki her şeyi silin, `apps_script/Code.gs` dosyasının tamamını yapıştırın. **Kaydet** (disket simgesi).
 
-## 2. Sayfaları oluştur (bir kere)
+## 2. Sayfaları oluştur
+En kolayı: kodu yapıştırıp yeni sürüm dağıttıktan sonra (3. adım) **adresi tarayıcıda açın**; eksik sayfalar kendiliğinden oluşur. Elle yapmak isterseniz:
 1. Üstteki fonksiyon listesinden **`kurulum`** seçip **Çalıştır**'a basın.
 2. İlk seferde izin ister: *İzinleri incele → hesabınız → Gelişmiş → (güvenli değil) git → İzin ver*. (E-Tablonuza erişim izni, kendi yazdığınız kod için normaldir.)
 3. Eksik sayfalar başlıklarıyla oluşturulur; var olanlara **dokunulmaz**:

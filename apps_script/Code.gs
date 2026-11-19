@@ -31,8 +31,14 @@ const SPREADSHEET_ID = '';          // E-tabloya BAĞLI betikte boş bırakın
 
 // ------------------------------------------------------------------ giriş noktaları
 
+// Adresi tarayıcıda açmak: sunucunun çalıştığını gösterir ve eksik sayfaları otomatik oluşturur.
 function doGet() {
-  return json_({ ok: true, service: 'meyvem' });
+  try {
+    ensureSheets_();
+    return json_({ ok: true, service: 'meyvem', sheets: 'ok' });
+  } catch (err) {
+    return json_({ ok: false, service: 'meyvem', error: String(err && err.message ? err.message : err) });
+  }
 }
 
 function doPost(e) {
@@ -180,6 +186,12 @@ function sheet_(name) {
   for (let i = 0; i < all.length; i++) {
     if (all[i].getName().trim().toLowerCase() === want) return all[i];
   }
+  // Sayfa yoksa oluştur ve bir kez daha ara
+  ensureSheets_();
+  const again = ss_().getSheets();
+  for (let j = 0; j < again.length; j++) {
+    if (again[j].getName().trim().toLowerCase() === want) return again[j];
+  }
   throw new Error('Sayfa bulunamadı: ' + name);
 }
 
@@ -258,7 +270,15 @@ function addFail_() {
  * oluşturur; var olan sayfa ve verilerin üzerine yazmaz.
  */
 function kurulum() {
+  ensureSheets_();
+}
+
+/** Eksik sayfaları ve başlıkları oluşturur; var olan hiçbir şeyin üzerine yazmaz. */
+function ensureSheets_() {
   const ss = ss_();
+  if (!ss) {
+    throw new Error('Bu betik bir E-Tabloya bağlı değil. E-Tabloyu açıp Uzantılar > Apps Script ile açılan betiğe yapıştırın.');
+  }
   const defs = [
     [SHEET_AUTH, ['giriş no', 'gmail']],
     [SHEET_ATT, ['yetkili kişi giriş no', 'UUID', 'şifre (özet)', 'uygulamada geçen süre (s:dk:sn)', 'son giriş tarihleri →']],
@@ -270,14 +290,14 @@ function kurulum() {
     for (let i = 0; i < all.length; i++) {
       if (all[i].getName().trim().toLowerCase() === d[0]) sh = all[i];
     }
+    const created = !sh;
     if (!sh) sh = ss.insertSheet(d[0]);
     if (String(sh.getRange(1, 1).getDisplayValue() || '').length === 0) {
       sh.getRange(1, 1, 1, d[1].length).setValues([d[1]]);
     }
-  });
-  // Numaralar sıfırla başladığı için A sütununu düz metin yap
-  [SHEET_AUTH, SHEET_ATT].forEach(function (n) {
-    const sh = sheet_(n);
-    sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@');
+    // Numaralar sıfırla başladığı için A sütununu düz metin yap (yeni oluşturulan sayfalarda)
+    if (created && (d[0] === SHEET_AUTH || d[0] === SHEET_ATT)) {
+      sh.getRange(2, 1, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@');
+    }
   });
 }
