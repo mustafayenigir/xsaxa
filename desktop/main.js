@@ -1,12 +1,15 @@
 'use strict';
 const {
-  app, BrowserWindow, Menu, ipcMain, nativeTheme, powerSaveBlocker, screen, session,
+  app, BrowserWindow, Menu, ipcMain, nativeTheme, net, powerSaveBlocker, screen, session,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-const SITE_URL = 'https://scjegitim.blogspot.com';
+const DEFAULT_SITE = 'https://scjegitim.blogspot.com';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyUwCt2kyUA4npnPIaqJztXCNsq6B0anGvRWaW5UwfHKBhHbgGadagfocj-KH2jeSYt/exec';
+const NO_RE = /^[A-Z0-9-]{6,24}$/;
+const GMAIL_RE = /^[a-z0-9._%+-]+@(gmail|googlemail)\.com$/;
 const ICON = path.join(__dirname, 'build', 'icon.png');
 const PRELOAD = path.join(__dirname, 'preload.js');
 
@@ -21,7 +24,12 @@ app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 // ---------------------------------------------------------------- ayarlar
-const DEFAULTS = { keepAudio: true, theme: 'system', zoom: 100, pwdHash: null, pwdSalt: null };
+const DEFAULTS = {
+  keepAudio: true, theme: 'system', zoom: 100, pwdHash: null, pwdSalt: null,
+  // kayıt / yoklama
+  pendingNo: null, no: null, uuid: null, token: null, gmailDone: false,
+  siteUrl: null, links: [], pendingSeconds: 0,
+};
 let settingsFile = null;
 let settings = { ...DEFAULTS };
 
@@ -65,6 +73,125 @@ function safeEqualHex(a, b) {
 let failedAttempts = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ---------------------------------------------------------------- sunucu (Google Apps Script)
+// Yanıt: { ok: true, ... } | { ok: false, error: 'invalid|busy|auth|bad_request|server' } | null (ağ hatası)
+async function api(action, fields) {
+  try {
+    const res = await net.fetch(API_URL, {
+      method: 'POST',
+      // text/plain: Apps Script gövdeyi okur; ek ön kontrol gerektirmez
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, ...fields }),
+      redirect: 'follow', // Apps Script yanıtı 302 ile verir
+      signal: AbortSignal.timeout(15000),
+    });
+    return await res.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+function identity() {
+  return settings.no && settings.uuid && settings.token
+    ? { no: settings.no, uuid: settings.uuid, token: settings.token }
+    : null;
+}
+
+function currentStep() {
+  if (identity()) return settings.gmailDone ? 'enter' : 'gmail';
+  if (settings.pendingNo) return 'password';
+  return 'no';
+}
+
+function errText(code) {
+  switch (code) {
+    case 'invalid': return 'Bu numara yetkili listede bulunamadı.';
+    case 'busy': return 'Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.';
+    case 'auth': return 'Hesabınız doğrulanamadı. Uygulama verisini silip yeniden başlatın ve numaranızı tekrar girin.';
+    default: return 'Sunucuda bir sorun oluştu. Biraz sonra tekrar deneyin.';
+  }
+}
+const NET_ERR = 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+
+function httpsLinks(arr) {
+  const out = [];
+  for (const o of Array.isArray(arr) ? arr : []) {
+    const url = o && typeof o.url === 'string' ? o.url : '';
+    if (!/^https:\/\/./i.test(url)) continue;
+    out.push({ name: String(o.name || url), url, desc: String(o.desc || '') });
+  }
+  return out;
+}
+
+async function refreshLinks() {
+  const id = identity();
+  if (!id) return null;
+  const r = await api('links', id);
+  if (!r || !r.ok) return null;
+  settings.links = httpsLinks(r.links);
+  saveSettings();
+  return settings.links;
+}
+
+/** Açılacak adres: seçili → listenin ilki → varsayılan. */
+function siteToOpen() {
+  if (settings.siteUrl && /^https:\/\/./i.test(settings.siteUrl)) return settings.siteUrl;
+  const first = (settings.links || [])[0];
+  return first ? first.url : DEFAULT_SITE;
+}
+
+// Uygulamada geçen süre: dakikada bir yerel sayaca eklenir, 10 dakikada bir ve kilitlenince/çıkışta sunucuya gider.
+let usageMark = 0;
+let usageTimer = null;
+let lastFlush = 0;
+let flushing = false;
+const TICK_MS = 60 * 1000;
+const FLUSH_EVERY_MS = 10 * 60 * 1000;
+const MAX_TICK_SEC = 90; // bilgisayar uyursa uyku süresi sayılmaz
+
+function tickUsage() {
+  if (!usageMark) return;
+  const now = Date.now();
+  const sec = Math.min(Math.max(Math.floor((now - usageMark) / 1000), 0), MAX_TICK_SEC);
+  usageMark = now;
+  settings.pendingSeconds = (settings.pendingSeconds || 0) + sec;
+  saveSettings();
+  if (now - lastFlush >= FLUSH_EVERY_MS) flushUsage();
+}
+
+async function flushUsage() {
+  lastFlush = Date.now();
+  const id = identity();
+  const pending = settings.pendingSeconds || 0;
+  if (flushing || !id || pending <= 0) return;
+  flushing = true;
+  try {
+    const chunk = Math.min(pending, 7200);
+    const r = await api('usage', { ...id, seconds: chunk });
+    if (r && r.ok) {
+      settings.pendingSeconds = Math.max(0, (settings.pendingSeconds || 0) - chunk);
+      saveSettings();
+    }
+  } finally {
+    flushing = false;
+  }
+}
+
+function beginUsage() {
+  if (!usageMark) usageMark = Date.now();
+  if (!lastFlush) lastFlush = Date.now();
+  clearInterval(usageTimer);
+  usageTimer = setInterval(tickUsage, TICK_MS);
+  flushUsage(); // önceki oturumdan kalan süre varsa gönder
+}
+
+function endUsage() {
+  clearInterval(usageTimer);
+  tickUsage();
+  usageMark = 0;
+  return flushUsage();
+}
+
 // ---------------------------------------------------------------- pencereler
 let win = null;
 let settingsWin = null;
@@ -72,6 +199,7 @@ let blackWin = null;
 let unlocked = false;
 let blocker = null;
 let themeCssKey = null;
+let siteBase = null;
 
 function secure(w) {
   // Windows 10 (2004+) ve üstünde pencere ekran görüntüsü / ekran kaydında siyah görünür.
@@ -163,15 +291,46 @@ function showLock() {
   buildMenu();
 }
 
-function openSite() {
+function loadSite(url) {
+  siteBase = url;
+  if (win && unlocked) win.loadURL(url);
+}
+
+/** Seçili site listeden kaldırıldıysa seçimi sıfırlar; gösterilen site değiştiyse yeniler. */
+function reconcileSite() {
+  if (!unlocked) return;
+  const list = settings.links || [];
+  if (list.length === 0) return;
+  if (settings.siteUrl && !list.some((l) => l.url === settings.siteUrl)) {
+    settings.siteUrl = null;
+    saveSettings();
+  }
+  const want = siteToOpen();
+  if (want !== siteBase) loadSite(want);
+}
+
+async function openSite(logLogin) {
   unlocked = true;
   updateBlocker();
-  if (win) win.loadURL(SITE_URL);
   buildMenu();
+  beginUsage();
+  const id = identity();
+  if (logLogin && id) api('login', id); // yoklama tablosuna giriş tarihi (cevabı beklenmez)
+
+  const firstTime = !settings.siteUrl && (settings.links || []).length === 0;
+  if (firstTime && id) {
+    await refreshLinks(); // liste hiç inmemiş: önce listeyi al, ilk siteyi aç (olmazsa varsayılan)
+    if (unlocked) loadSite(siteToOpen());
+  } else {
+    loadSite(siteToOpen());
+    if (id) refreshLinks().then(reconcileSite);
+  }
 }
 
 function lockApp() {
   if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
+  endUsage();
+  siteBase = null;
   showLock(); // site boşaltılır, ses durur
 }
 
@@ -182,7 +341,7 @@ function openSettings() {
   }
   settingsWin = new BrowserWindow({
     width: 440,
-    height: 660,
+    height: 760,
     parent: win || undefined,
     modal: !!win,
     resizable: false,
@@ -301,37 +460,113 @@ function fromLocal(e) {
 
 ipcMain.handle('lock:state', (e) => {
   if (!fromLocal(e)) return null;
-  return { hasPassword: !!settings.pwdHash };
+  return { step: currentStep() };
 });
 
-ipcMain.handle('lock:create', (e, pwd, confirm) => {
+// 1) Giriş numarası (yalnızca bir kere)
+ipcMain.handle('lock:checkNo', async (e, no) => {
   if (!fromLocal(e)) return { ok: false, error: 'İzin yok.' };
-  if (settings.pwdHash) return { ok: false, error: 'Şifre zaten oluşturulmuş.' };
+  if (currentStep() !== 'no') return { ok: true, step: currentStep() };
+  no = String(no || '').trim().replace(/\s+/g, '').toUpperCase();
+  if (!NO_RE.test(no)) return { ok: false, error: 'Giriş numarası geçerli biçimde değil. Örnek: 00xxxxxx-xxxxx' };
+  const r = await api('check', { no });
+  if (!r) return { ok: false, error: NET_ERR };
+  if (!r.ok) return { ok: false, error: errText(r.error) };
+  settings.pendingNo = no;
+  saveSettings();
+  return { ok: true, step: 'password' };
+});
+
+// 2) Şifre oluştur → sunucuda UUID üretilir ve yoklama satırı yazılır
+ipcMain.handle('lock:create', async (e, pwd, confirm) => {
+  if (!fromLocal(e)) return { ok: false, error: 'İzin yok.' };
+  if (currentStep() !== 'password') return { ok: true, step: currentStep() };
   pwd = String(pwd || '');
   if (!pwd) return { ok: false, error: 'Lütfen şifre girin.' };
   if (pwd.length < 4) return { ok: false, error: 'Şifre en az 4 karakter olmalı.' };
   if (pwd !== String(confirm || '')) return { ok: false, error: 'Şifreler aynı değil.' };
+  const no = settings.pendingNo;
   const salt = crypto.randomBytes(16).toString('hex');
-  settings.pwdSalt = salt;
-  settings.pwdHash = hashPwd(pwd, salt);
+  const hash = hashPwd(pwd, salt); // 64 hex karakter: sunucuya giden "token" bu özettir
+  const r = await api('register', { no, pwdHash: hash });
+  if (!r) return { ok: false, error: NET_ERR };
+  if (r.ok && typeof r.uuid === 'string' && r.uuid) {
+    // Yerel şifre özeti yalnızca sunucu kaydı başarılı olunca saklanır
+    settings.pwdSalt = salt;
+    settings.pwdHash = hash;
+    settings.no = no;
+    settings.uuid = r.uuid;
+    settings.token = hash;
+    settings.gmailDone = false;
+    settings.pendingNo = null;
+    saveSettings();
+    return { ok: true, step: 'gmail' };
+  }
+  if (r.error === 'invalid') {
+    settings.pendingNo = null; // numara bu arada listeden çıkarılmış
+    saveSettings();
+    return { ok: false, step: 'no', error: errText('invalid') };
+  }
+  return { ok: false, error: errText(r.error) };
+});
+
+// 3) Gmail adresi
+ipcMain.handle('lock:gmail', async (e, gmail) => {
+  if (!fromLocal(e)) return { ok: false, error: 'İzin yok.' };
+  const id = identity();
+  if (!id) return { ok: false, step: currentStep(), error: 'Önce giriş numaranızı girin.' };
+  gmail = String(gmail || '').trim().toLowerCase();
+  if (!GMAIL_RE.test(gmail)) return { ok: false, error: 'Lütfen geçerli bir Gmail adresi girin (örnek: ad@gmail.com).' };
+  const r = await api('gmail', { ...id, gmail });
+  if (!r) return { ok: false, error: NET_ERR };
+  if (!r.ok) {
+    return { ok: false, error: r.error === 'bad_request' ? 'Lütfen geçerli bir Gmail adresi girin (örnek: ad@gmail.com).' : errText(r.error) };
+  }
+  settings.gmailDone = true;
   saveSettings();
-  openSite();
+  openSite(false); // ilk giriş tarihi kayıt sırasında zaten yazıldı
   return { ok: true };
 });
 
+// 4) Sonraki açılışlar: yalnızca şifre (yerelde doğrulanır, ağ gerekmez)
 ipcMain.handle('lock:unlock', async (e, pwd) => {
   if (!fromLocal(e)) return { ok: false, error: 'İzin yok.' };
   pwd = String(pwd || '');
   if (!pwd) return { ok: false, error: 'Lütfen şifre girin.' };
-  if (!settings.pwdHash) return { ok: false, error: 'Önce şifre oluşturun.' };
+  if (currentStep() !== 'enter') return { ok: false, step: currentStep(), error: 'Önce kaydı tamamlayın.' };
   if (safeEqualHex(hashPwd(pwd, settings.pwdSalt), settings.pwdHash)) {
     failedAttempts = 0;
-    openSite();
+    openSite(true);
     return { ok: true };
   }
   failedAttempts += 1;
   await sleep(Math.min(failedAttempts * 500, 5000)); // yanlış denemelerde bekletme
   return { ok: false, error: 'Hatalı şifre.' };
+});
+
+// Web sitesi listesi (Ayarlar)
+function sitesState() {
+  return { registered: !!identity(), links: settings.links || [], selected: siteToOpen() };
+}
+
+ipcMain.handle('sites:get', (e) => (fromLocal(e) ? sitesState() : null));
+
+ipcMain.handle('sites:refresh', async (e) => {
+  if (!fromLocal(e)) return null;
+  const list = await refreshLinks();
+  if (list) reconcileSite();
+  return { ...sitesState(), refreshed: !!list };
+});
+
+ipcMain.handle('sites:select', (e, url) => {
+  if (!fromLocal(e)) return null;
+  // Yalnızca sunucudan gelen listedeki adresler seçilebilir
+  if ((settings.links || []).some((l) => l.url === url)) {
+    settings.siteUrl = url;
+    saveSettings();
+    if (unlocked) loadSite(siteToOpen());
+  }
+  return sitesState();
 });
 
 ipcMain.handle('settings:get', (e) => (fromLocal(e) ? publicSettings() : null));
@@ -378,4 +613,14 @@ if (!gotLock) {
   });
 
   app.on('window-all-closed', () => app.quit());
+
+  // Çıkarken birikmiş süreyi (en çok 3 sn bekleyerek) sunucuya gönder
+  let quitting = false;
+  app.on('before-quit', (e) => {
+    if (quitting) return;
+    quitting = true;
+    e.preventDefault();
+    tickUsage();
+    Promise.race([flushUsage(), sleep(3000)]).finally(() => app.quit());
+  });
 }

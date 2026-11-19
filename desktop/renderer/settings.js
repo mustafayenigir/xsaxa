@@ -25,5 +25,58 @@ $('plus').addEventListener('click', () => change({ zoom: Number($('zoom').value)
 $('reset').addEventListener('click', () => change({ zoom: 100 }));
 $('close').addEventListener('click', () => window.close());
 
+// ---- Web sitesi listesi (metinler textContent ile yazılır; sunucudan gelen veri HTML olarak yorumlanmaz)
+function showSites(st, note) {
+  const box = $('sites');
+  box.textContent = '';
+  const msg = $('siteMsg');
+  const setMsg = (t) => { msg.textContent = t || ''; msg.hidden = !t; };
+  if (!st || !st.registered) {
+    $('siteRefresh').hidden = true;
+    setMsg('Site listesi, giriş numaranızla kayıt olduktan sonra görünür.');
+    return;
+  }
+  $('siteRefresh').hidden = false;
+  if (!st.links.length) { setMsg('Listede site bulunamadı.'); return; }
+  setMsg(note || '');
+  st.links.forEach((l) => {
+    const label = document.createElement('label');
+    label.className = 'opt';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'site';
+    radio.checked = l.url === st.selected;
+    radio.addEventListener('change', async () => {
+      if (radio.checked) showSites(await window.api.selectSite(l.url), 'Site değiştirildi.');
+    });
+    const text = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = l.name;
+    text.appendChild(strong);
+    if (l.desc) {
+      const d = document.createElement('div');
+      d.className = 'hint';
+      d.style.margin = '2px 0 0';
+      d.textContent = l.desc;
+      text.appendChild(d);
+    }
+    label.appendChild(radio);
+    label.appendChild(text);
+    box.appendChild(label);
+  });
+}
+
+async function refreshSites() {
+  $('siteRefresh').disabled = true;
+  try {
+    const st = await window.api.refreshSites();
+    showSites(st, st && st.refreshed ? '' : 'Liste yenilenemedi. Kayıtlı liste gösteriliyor.');
+  } finally {
+    $('siteRefresh').disabled = false;
+  }
+}
+$('siteRefresh').addEventListener('click', refreshSites);
+window.api.getSites().then((st) => { showSites(st); if (st && st.registered) refreshSites(); });
+
 window.api.onSettingsUpdated(show);
 window.api.getSettings().then(show);

@@ -67,3 +67,10 @@ https://github.com/mustafayenigir/xsaxa/releases/download/windows/Meyvem.exe
 - Menüden: Meyvem → Ayarlar (Ctrl+,), Siyah ekran (Ctrl+B), Kilitle (Ctrl+L). Yazı boyutu: Ctrl + / Ctrl -.
 - Şifre `%APPDATA%\Meyvem` altında saklanır. Unutulursa bu klasörü silmek şifreyi sıfırlar.
 - İmzasız olduğu için ilk açılışta Windows SmartScreen uyarısı çıkabilir: "Ek bilgi" → "Yine de çalıştır".
+
+
+## Kayıt / yoklama sistemi (v2)
+- Akış: giriş numarası (bir kere) → şifre oluştur → Gmail → site. Sonraki açılışlarda yalnızca şifre.
+- Sunucu: `apps_script/Code.gs` (Google Apps Script). Kurulum: `apps_script/KURULUM.md`.
+- Site listesi E-Tablodaki `web site linkleri` sayfasından gelir; kullanıcı Ayarlar'dan seçer.
+- Android'de uygulamanın sesinin ekran kaydedicilerle yakalanması engellenir (`allowAudioPlaybackCapture=false`, `ALLOW_CAPTURE_BY_NONE`). Windows'ta ses kaydını engelleyen bir mekanizma yoktur.

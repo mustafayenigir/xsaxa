@@ -6,6 +6,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 if (location.protocol === 'file:') {
   contextBridge.exposeInMainWorld('api', {
     lockState: () => ipcRenderer.invoke('lock:state'),
+    checkNo: (no) => ipcRenderer.invoke('lock:checkNo', no),
+    saveGmail: (gmail) => ipcRenderer.invoke('lock:gmail', gmail),
+    getSites: () => ipcRenderer.invoke('sites:get'),
+    refreshSites: () => ipcRenderer.invoke('sites:refresh'),
+    selectSite: (url) => ipcRenderer.invoke('sites:select', url),
     createPassword: (pwd, confirm) => ipcRenderer.invoke('lock:create', pwd, confirm),
     unlock: (pwd) => ipcRenderer.invoke('lock:unlock', pwd),
     getSettings: () => ipcRenderer.invoke('settings:get'),
