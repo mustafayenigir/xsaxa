@@ -5,20 +5,26 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.TypedValue
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.switchmaterial.SwitchMaterial
+import java.util.concurrent.Executors
 
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var zoomSeek: SeekBar
     private lateinit var zoomLabel: TextView
     private lateinit var zoomPreview: TextView
+    private lateinit var siteGroup: RadioGroup
+    private lateinit var siteMessage: TextView
+    private lateinit var siteRefresh: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +38,14 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+
+        // --- Web sitesi seçimi ---
+        siteGroup = findViewById(R.id.siteGroup)
+        siteMessage = findViewById(R.id.siteMessage)
+        siteRefresh = findViewById(R.id.siteRefresh)
+        siteRefresh.setOnClickListener { refreshSites() }
+        renderSites(Account.cachedLinks(this))
+        if (Account.identity(this) != null) refreshSites()
 
         // --- Ses ---
         val keepAudio = findViewById<SwitchMaterial>(R.id.switchKeepAudio)
@@ -89,6 +103,75 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<Button>(R.id.zoomReset).setOnClickListener {
             zoomSeek.progress = (AppSettings.ZOOM_DEFAULT - AppSettings.ZOOM_MIN) / AppSettings.ZOOM_STEP
         }
+    }
+
+    private fun showSiteMessage(resId: Int?) {
+        if (resId == null) {
+            siteMessage.visibility = View.GONE
+        } else {
+            siteMessage.setText(resId)
+            siteMessage.visibility = View.VISIBLE
+        }
+    }
+
+    /** Sunucudaki "web site linkleri" listesini yeniler (arka planda). */
+    private fun refreshSites() {
+        if (Account.identity(this) == null) return
+        siteRefresh.isEnabled = false
+        showSiteMessage(R.string.site_loading)
+        val app = applicationContext
+        worker.execute {
+            val list = Account.refreshLinks(app)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                siteRefresh.isEnabled = true
+                if (list == null) {
+                    renderSites(Account.cachedLinks(this))
+                    showSiteMessage(R.string.site_refresh_failed)
+                } else {
+                    renderSites(list)
+                }
+            }
+        }
+    }
+
+    private fun renderSites(list: List<SiteLink>) {
+        siteGroup.setOnCheckedChangeListener(null)
+        siteGroup.removeAllViews()
+
+        if (Account.identity(this) == null) {
+            siteRefresh.visibility = View.GONE
+            showSiteMessage(R.string.site_not_registered)
+            return
+        }
+        siteRefresh.visibility = View.VISIBLE
+        showSiteMessage(if (list.isEmpty()) R.string.site_empty else null)
+
+        val current = Account.siteToOpen(this)
+        val byId = HashMap<Int, String>()
+        for (link in list) {
+            val rb = RadioButton(this)
+            rb.id = View.generateViewId()
+            rb.text = if (link.desc.isBlank()) link.name else link.name + "\n" + link.desc
+            rb.setTextColor(resources.getColor(R.color.on_background, theme))
+            rb.textSize = 16f
+            rb.setPadding(rb.paddingLeft, 12, rb.paddingRight, 12)
+            siteGroup.addView(rb, RadioGroup.LayoutParams(RadioGroup.LayoutParams.MATCH_PARENT, RadioGroup.LayoutParams.WRAP_CONTENT))
+            byId[rb.id] = link.url
+            if (link.url == current) rb.isChecked = true
+        }
+        siteGroup.setOnCheckedChangeListener { _, id ->
+            val url = byId[id] ?: return@setOnCheckedChangeListener
+            Account.setSelectedUrl(this, url)
+            Toast.makeText(this, R.string.site_saved, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val worker = Executors.newSingleThreadExecutor()
+
+    override fun onDestroy() {
+        worker.shutdown()
+        super.onDestroy()
     }
 
     private fun renderZoom(z: Int) {

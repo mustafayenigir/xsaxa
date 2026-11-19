@@ -36,6 +36,27 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/infoText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:textColor="@color/on_background_muted"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/noInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="username"
+                android:hint="@string/no_hint"
+                android:importantForAutofill="no"
+                android:inputType="textCapCharacters|textNoSuggestions"
+                android:maxLines="1"
+                android:padding="16dp"
+                android:visibility="gone" />
+
             <EditText
                 android:id="@+id/passwordInput"
                 android:layout_width="match_parent"
@@ -56,6 +77,18 @@
                 android:hint="@string/password_confirm_hint"
                 android:importantForAutofill="no"
                 android:inputType="textPassword"
+                android:maxLines="1"
+                android:padding="16dp"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/gmailInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="emailAddress"
+                android:hint="@string/gmail_hint"
+                android:importantForAutofill="no"
+                android:inputType="textEmailAddress"
                 android:maxLines="1"
                 android:padding="16dp"
                 android:visibility="gone" />

@@ -10,6 +10,7 @@
 
     <application
         android:name=".MeyvemApp"
+        android:allowAudioPlaybackCapture="false"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"

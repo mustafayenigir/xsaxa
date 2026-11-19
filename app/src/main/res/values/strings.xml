@@ -17,6 +17,39 @@
     <string name="err_mismatch">Şifreler aynı değil.</string>
     <string name="err_wrong">Hatalı şifre.</string>
 
+    <!-- Kayıt akışı -->
+    <string name="no_title">Giriş Numarası</string>
+    <string name="no_hint">Giriş numarası (00xxxxxx-xxxxx)</string>
+    <string name="no_button">Devam Et</string>
+    <string name="info_no">Yetkili kişiler giriş numaranızı (örnek: 00xxxxxx-xxxxx) yalnızca bir kere gireceksiniz. Sonraki açılışlarda yalnızca şifreniz sorulur.\n\nGiriş tarihleriniz ve uygulamada geçirdiğiniz süre kaydedilir.</string>
+
+    <string name="info_password">En az 4 karakterli bir şifre belirleyin.\n\nŞifrenizi unutursanız uygulamayı silip yeniden yüklemeniz gerekir.</string>
+    <string name="create_button_save">Kaydet</string>
+
+    <string name="gmail_title">Gmail Adresi</string>
+    <string name="gmail_hint">Gmail adresiniz</string>
+    <string name="gmail_button">Kaydet ve Devam Et</string>
+    <string name="info_gmail">Gmail adresiniz yalnızca bu uygulamaya özel olarak kullanılmaktadır ve web sitesine giriş için şart ve zorunludur.</string>
+
+    <string name="checking">Kontrol ediliyor…</string>
+    <string name="err_no_format">Giriş numarası geçerli biçimde değil. Örnek: 00xxxxxx-xxxxx</string>
+    <string name="err_no_invalid">Bu numara yetkili listede bulunamadı.</string>
+    <string name="err_gmail_format">Lütfen geçerli bir Gmail adresi girin (örnek: ad@gmail.com).</string>
+    <string name="err_network">Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="err_busy">Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.</string>
+    <string name="err_auth">Hesabınız doğrulanamadı. Uygulamayı silip yeniden yükleyin ve numaranızı tekrar girin.</string>
+    <string name="err_server">Sunucuda bir sorun oluştu. Biraz sonra tekrar deneyin.</string>
+
+    <!-- Ayarlar: web sitesi seçimi -->
+    <string name="section_site">Web sitesi</string>
+    <string name="site_hint">Uygulamada görüntülenecek siteyi seçin. Liste sunucudan gelir.</string>
+    <string name="site_refresh">Listeyi yenile</string>
+    <string name="site_loading">Liste yenileniyor…</string>
+    <string name="site_not_registered">Site listesi, giriş numaranızla kayıt olduktan sonra görünür.</string>
+    <string name="site_empty">Listede site bulunamadı.</string>
+    <string name="site_refresh_failed">Liste yenilenemedi. Kayıtlı liste gösteriliyor.</string>
+    <string name="site_saved">Site değiştirildi.</string>
+
     <string name="channel_name">Oynatma</string>
     <string name="channel_desc">Ekran kapalıyken içeriğin çalışmaya devam etmesini sağlar.</string>
     <string name="notif_text">İçerik arka planda açık tutuluyor</string>
