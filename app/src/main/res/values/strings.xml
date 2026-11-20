@@ -21,20 +21,26 @@
     <string name="no_title">Giriş Numarası</string>
     <string name="no_hint">Giriş numarası (00xxxxxx-xxxxx)</string>
     <string name="no_button">Devam Et</string>
-    <string name="info_no">Yetkili kişiler giriş numaranızı (örnek: 00xxxxxx-xxxxx) yalnızca bir kere gireceksiniz. Sonraki açılışlarda yalnızca şifreniz sorulur.\n\nGiriş tarihleriniz ve uygulamada geçirdiğiniz süre kaydedilir.</string>
+    <string name="info_no">Yetkili kişiler giriş numaranızı (örnek: 00xxxxxx-xxxxx) yalnızca bir kere gireceksiniz. Sonraki açılışlarda yalnızca şifreniz sorulur.</string>
 
     <string name="info_password">En az 4 karakterli bir şifre belirleyin.\n\nŞifrenizi unutursanız uygulamayı silip yeniden yüklemeniz gerekir.</string>
     <string name="create_button_save">Kaydet</string>
 
-    <string name="gmail_title">Gmail Adresi</string>
-    <string name="gmail_hint">Gmail adresiniz</string>
-    <string name="gmail_button">Kaydet ve Devam Et</string>
-    <string name="info_gmail">Gmail adresiniz yalnızca bu uygulamaya özel olarak kullanılmaktadır ve web sitesine giriş için şart ve zorunludur.</string>
+    <string name="google_title">Google Hesabı</string>
+    <string name="info_google">Web sitelerine girebilmek için Google hesabınızla oturum açın. Bu oturum, uygulamadaki tüm sitelerde geçerli olur; her sitede yeniden giriş yapmanız gerekmez.</string>
+    <string name="google_continue">Devam Et</string>
+    <string name="google_status_wait">Google hesabınızla oturum açın.</string>
+    <string name="google_status_ok">Oturum açıldı ✓</string>
+    <string name="site_step_title">Web Sitesi</string>
+    <string name="info_site">Şimdi Ayarlar açılacak. Görüntülemek istediğiniz web sitesini seçip Devam Et\'e dokunun.</string>
+    <string name="site_step_button">Ayarları Aç</string>
+    <string name="site_continue">Devam Et</string>
+    <string name="site_choose_first">Devam etmek için bir site seçin.</string>
+    <string name="no_site">Gösterilecek site bulunamadı. Ayarlar\'dan bir site seçin.</string>
 
     <string name="checking">Kontrol ediliyor…</string>
     <string name="err_no_format">Giriş numarası geçerli biçimde değil. Örnek: 00xxxxxx-xxxxx</string>
     <string name="err_no_invalid">Bu numara yetkili listede bulunamadı.</string>
-    <string name="err_gmail_format">Lütfen geçerli bir Gmail adresi girin (örnek: ad@gmail.com).</string>
     <string name="err_network">Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.</string>
     <string name="err_busy">Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.</string>
     <string name="err_auth">Hesabınız doğrulanamadı. Uygulamayı silip yeniden yükleyin ve numaranızı tekrar girin.</string>

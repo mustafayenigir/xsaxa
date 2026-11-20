@@ -13,6 +13,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -22,6 +23,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -56,14 +58,32 @@ class MainActivity : AppCompatActivity() {
         private const val MAX_TICK_SEC = 90L
 
         private val NO_REGEX = Regex("^[A-Z0-9-]{6,24}$")
-        private val GMAIL_REGEX = Regex("^[a-z0-9._%+-]+@(gmail|googlemail)\\.com$")
+        private val GOOGLE_SESSION = Regex("(^|;\\s*)(SID|__Secure-1PSID)=")
+        private const val GOOGLE_SIGNIN_URL =
+            "https://accounts.google.com/ServiceLogin?hl=tr&continue=https%3A%2F%2Fmyaccount.google.com%2F"
     }
 
-    private enum class Step { NO, PASSWORD, GMAIL, ENTER }
+    private enum class Step { NO, PASSWORD, GOOGLE, SITE, ENTER }
 
     private var step = Step.NO
     private var busy = false
     private val ui = Handler(Looper.getMainLooper())
+    private var googleLoaded = false
+    private val googlePoll = object : Runnable {
+        override fun run() {
+            updateGoogleStatus()
+            if (step == Step.GOOGLE) ui.postDelayed(this, 1500)
+        }
+    }
+
+    // İlk ayarlar ekranı (site seçimi). "Devam Et" ile dönülürse site açılır.
+    private val firstSettings = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        if (r.resultCode == RESULT_OK && step == Step.SITE) {
+            Account.setSiteDone(this)
+            openSite(null, logLogin = false)
+        }
+    }
+
     private val usageTick = object : Runnable {
         override fun run() {
             tickUsage()
@@ -81,7 +101,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lockTitle: TextView
     private lateinit var infoText: TextView
     private lateinit var noInput: EditText
-    private lateinit var gmailInput: EditText
+    private lateinit var googleContainer: View
+    private lateinit var googleWebView: WebView
+    private lateinit var googleStatus: TextView
+    private lateinit var googleContinue: Button
     private lateinit var passwordInput: EditText
     private lateinit var passwordConfirm: EditText
     private lateinit var unlockButton: Button
@@ -112,7 +135,10 @@ class MainActivity : AppCompatActivity() {
         lockTitle = findViewById(R.id.lockTitle)
         infoText = findViewById(R.id.infoText)
         noInput = findViewById(R.id.noInput)
-        gmailInput = findViewById(R.id.gmailInput)
+        googleContainer = findViewById(R.id.googleContainer)
+        googleWebView = findViewById(R.id.googleWebView)
+        googleStatus = findViewById(R.id.googleStatus)
+        googleContinue = findViewById(R.id.googleContinue)
         passwordInput = findViewById(R.id.passwordInput)
         passwordConfirm = findViewById(R.id.passwordConfirm)
         unlockButton = findViewById(R.id.unlockButton)
@@ -125,6 +151,8 @@ class MainActivity : AppCompatActivity() {
         blackOverlay = findViewById(R.id.blackOverlay)
 
         setupWebView()
+        setupGoogleWebView()
+        googleContinue.setOnClickListener { handleGoogleContinue() }
         setupBlackOverlay()
         requestNotificationPermissionIfNeeded()
 
@@ -134,14 +162,18 @@ class MainActivity : AppCompatActivity() {
         settingsButton.setOnClickListener { openSettings() }
         setupFloatingButton()
 
-        if (sessionUnlocked) openSite(lastUrl ?: siteBase ?: Account.siteToOpen(this), logLogin = false)
+        if (sessionUnlocked) openSite(lastUrl ?: siteBase, logLogin = false)
     }
 
     // ---------------- Kayıt / şifre ekranı ----------------
 
     /** Kayıtlı duruma göre hangi adımda olunacağını bulur (uygulama kapansa da kaldığı yerden sürer). */
     private fun currentStep(): Step = when {
-        Account.identity(this) != null -> if (Account.gmailDone(this)) Step.ENTER else Step.GMAIL
+        Account.identity(this) != null -> when {
+            !Account.googleDone(this) -> Step.GOOGLE
+            !Account.siteDone(this) -> Step.SITE
+            else -> Step.ENTER
+        }
         Account.pendingNo(this) != null -> Step.PASSWORD
         else -> Step.NO
     }
@@ -155,7 +187,20 @@ class MainActivity : AppCompatActivity() {
         noInput.visibility = if (s == Step.NO) View.VISIBLE else View.GONE
         passwordInput.visibility = if (s == Step.PASSWORD || s == Step.ENTER) View.VISIBLE else View.GONE
         passwordConfirm.visibility = if (s == Step.PASSWORD) View.VISIBLE else View.GONE
-        gmailInput.visibility = if (s == Step.GMAIL) View.VISIBLE else View.GONE
+
+        // Google adımında kendi ekranı (WebView) görünür; diğer adımlarda şifre/numara ekranı
+        val google = s == Step.GOOGLE
+        googleContainer.visibility = if (google) View.VISIBLE else View.GONE
+        lockContainer.visibility = if (google) View.GONE else View.VISIBLE
+        settingsButton.visibility = if (google) View.GONE else View.VISIBLE
+        ui.removeCallbacks(googlePoll)
+        if (google) {
+            if (!googleLoaded) {
+                googleLoaded = true
+                googleWebView.loadUrl(GOOGLE_SIGNIN_URL)
+            }
+            ui.post(googlePoll)
+        }
 
         when (s) {
             Step.NO -> {
@@ -168,10 +213,13 @@ class MainActivity : AppCompatActivity() {
                 infoText.setText(R.string.info_password)
                 unlockButton.setText(R.string.create_button_save)
             }
-            Step.GMAIL -> {
-                lockTitle.setText(R.string.gmail_title)
-                infoText.setText(R.string.info_gmail)
-                unlockButton.setText(R.string.gmail_button)
+            Step.GOOGLE -> {
+                // Kendi ekranında gösterilir (googleContainer)
+            }
+            Step.SITE -> {
+                lockTitle.setText(R.string.site_step_title)
+                infoText.setText(R.string.info_site)
+                unlockButton.setText(R.string.site_step_button)
             }
             Step.ENTER -> {
                 lockTitle.setText(R.string.enter_title)
@@ -187,7 +235,8 @@ class MainActivity : AppCompatActivity() {
         when (step) {
             Step.NO -> handleNo()
             Step.PASSWORD -> handleCreatePassword()
-            Step.GMAIL -> handleGmail()
+            Step.GOOGLE -> Unit
+            Step.SITE -> openFirstSettings()
             Step.ENTER -> handleEnter()
         }
     }
@@ -265,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                     Account.saveRegistration(this, no, uuid, hash)
                     passwordInput.text?.clear()
                     passwordConfirm.text?.clear()
-                    showStep(Step.GMAIL)
+                    showStep(Step.GOOGLE)
                 }
                 r.optString("error") == "invalid" -> {
                     // Numara bu arada listeden çıkarılmış
@@ -278,33 +327,54 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 3) Gmail adresi
-    private fun handleGmail() {
-        val gmail = gmailInput.text.toString().trim().lowercase()
-        if (!GMAIL_REGEX.matches(gmail)) {
-            message(R.string.err_gmail_format)
-            return
-        }
-        val id = Account.identity(this)
-        if (id == null) {
-            showStep(Step.NO)
-            return
-        }
-        setBusy(true)
-        background({ Api.gmail(id, gmail) }) { r ->
-            setBusy(false)
-            when {
-                r == null -> message(R.string.err_network)
-                r.optBoolean("ok") -> {
-                    Account.setGmailDone(this)
-                    gmailInput.text?.clear()
-                    // İlk giriş tarihi kayıt sırasında zaten yazıldı; tekrar yazılmaz
-                    openSite(null, logLogin = false)
-                }
-                r.optString("error") == "bad_request" -> message(R.string.err_gmail_format)
-                else -> message(errorFor(r.optString("error")))
+    // 3) Google hesabıyla oturum açma (adres yazılmaz; oturum uygulamadaki tüm sitelerde geçerli olur)
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupGoogleWebView() {
+        val s = googleWebView.settings
+        s.javaScriptEnabled = true
+        s.domStorageEnabled = true
+        // Google, gömülü WebView'de giriş sayfasını "wv" işaretiyle engelleyebilir; işareti kaldır.
+        s.userAgentString = s.userAgentString.replace("; wv", "").replace(Regex("Version/\\d+\\.\\d+ "), "")
+        val cm = CookieManager.getInstance()
+        cm.setAcceptCookie(true)
+        cm.setAcceptThirdPartyCookies(googleWebView, true)
+        googleWebView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                updateGoogleStatus()
             }
         }
+    }
+
+    private fun googleSignedIn(): Boolean {
+        val cm = CookieManager.getInstance()
+        val cookies = (cm.getCookie("https://accounts.google.com") ?: "") + ";" +
+            (cm.getCookie("https://www.google.com") ?: "")
+        return GOOGLE_SESSION.containsMatchIn(cookies)
+    }
+
+    private fun updateGoogleStatus() {
+        val ok = googleSignedIn()
+        googleStatus.setText(if (ok) R.string.google_status_ok else R.string.google_status_wait)
+        googleContinue.isEnabled = ok
+    }
+
+    private fun handleGoogleContinue() {
+        if (!googleSignedIn()) {
+            updateGoogleStatus()
+            return
+        }
+        CookieManager.getInstance().flush()
+        Account.setGoogleDone(this)
+        showStep(Step.SITE)
+        openFirstSettings()
+    }
+
+    // 3b) İlk ayarlar: site seçilip "Devam Et" denir
+    private fun openFirstSettings() {
+        firstSettings.launch(
+            Intent(this, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_FIRST_RUN, true)
+        )
     }
 
     // 4) Sonraki açılışlar: yalnızca şifre (yerelde doğrulanır, ağ gerekmez)
@@ -348,21 +418,35 @@ class MainActivity : AppCompatActivity() {
 
         if (url != null) {
             // Yeniden oluşturma (tema değişimi gibi): kaldığı sayfaya dön
-            if (siteBase == null) siteBase = Account.siteToOpen(this)
+            if (siteBase == null) siteBase = url
             webView.loadUrl(url)
             return
         }
 
-        val firstTime = Account.selectedUrl(this) == null && Account.cachedLinks(this).isEmpty()
-        if (firstTime && id != null) {
-            // Liste hiç indirilmemiş: önce listeyi al, ilk siteyi aç (olmazsa varsayılan)
-            background({ Account.refreshLinks(applicationContext) }) { loadSite(Account.siteToOpen(this)) }
+        val known = Account.siteToOpen(this)
+        if (known == null) {
+            // Liste hiç inmemiş: önce listeyi al, sonra ilk siteyi aç
+            if (id != null) {
+                background({ Account.refreshLinks(applicationContext) }) { showSiteOrNotice() }
+            } else {
+                showSiteOrNotice()
+            }
         } else {
-            loadSite(Account.siteToOpen(this))
+            loadSite(known)
             if (id != null) {
                 // Listeyi arka planda tazele; seçili site listeden kaldırıldıysa ilkine geç
                 background({ Account.refreshLinks(applicationContext) }) { list -> reconcileSite(list) }
             }
+        }
+    }
+
+    private fun showSiteOrNotice() {
+        val url = Account.siteToOpen(this)
+        if (url != null) {
+            loadSite(url)
+        } else {
+            webView.loadUrl("about:blank")
+            Toast.makeText(this, R.string.no_site, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -376,7 +460,7 @@ class MainActivity : AppCompatActivity() {
         if (list == null || list.isEmpty() || !unlocked) return
         val selected = Account.selectedUrl(this)
         if (selected != null && list.none { it.url == selected }) Account.setSelectedUrl(this, null)
-        val want = Account.siteToOpen(this)
+        val want = Account.siteToOpen(this) ?: return
         if (want != siteBase) loadSite(want)
     }
 
@@ -456,6 +540,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
         webView.webChromeClient = WebChromeClient()
+        // Google oturumu (ve sitelerin çerezleri) tüm sitelerde geçerli olsun
+        val cm = CookieManager.getInstance()
+        cm.setAcceptCookie(true)
+        cm.setAcceptThirdPartyCookies(webView, true)
     }
 
     /** Ayarlar ekranındaki tercihleri WebView'e uygular. */
@@ -649,7 +737,7 @@ class MainActivity : AppCompatActivity() {
             startKeepAliveService()
             // Ayarlar'dan farklı bir site seçildiyse onu aç
             val want = Account.siteToOpen(this)
-            if (want != siteBase) loadSite(want)
+            if (want != null && want != siteBase) loadSite(want)
         }
     }
 
@@ -674,6 +762,7 @@ class MainActivity : AppCompatActivity() {
         when {
             menuPanel.visibility == View.VISIBLE -> hideMenuPanel()
             blackMode -> exitBlackMode()
+            step == Step.GOOGLE && !unlocked && googleWebView.canGoBack() -> googleWebView.goBack()
             unlocked && webView.canGoBack() -> webView.goBack()
             else -> super.onBackPressed()
         }
@@ -681,6 +770,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         ui.removeCallbacks(usageTick)
+        ui.removeCallbacks(googlePoll)
+        googleWebView.destroy()
         if (unlocked) tickUsage()
         stopService(Intent(this, AudioKeepAliveService::class.java))
         webView.destroy()

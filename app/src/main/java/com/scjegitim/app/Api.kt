@@ -56,10 +56,6 @@ object Api {
         put("no", no); put("pwdHash", pwdHash)
     }
 
-    fun gmail(id: Account.Identity, gmail: String) = call("gmail") {
-        identity(id); put("gmail", gmail)
-    }
-
     fun login(id: Account.Identity) = call("login") { identity(id) }
 
     fun usage(id: Account.Identity, seconds: Long) = call("usage") {

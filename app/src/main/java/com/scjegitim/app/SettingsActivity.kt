@@ -19,6 +19,14 @@ import java.util.concurrent.Executors
 
 class SettingsActivity : AppCompatActivity() {
 
+    companion object {
+        /** Kayıt sırasında ilk kez açılırken true: site seçimi + "Devam Et" düğmesi gösterilir. */
+        const val EXTRA_FIRST_RUN = "first_run"
+    }
+
+    private var firstRun = false
+    private lateinit var continueButton: Button
+
     private lateinit var zoomSeek: SeekBar
     private lateinit var zoomLabel: TextView
     private lateinit var zoomPreview: TextView
@@ -37,7 +45,20 @@ class SettingsActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_settings)
 
+        firstRun = intent.getBooleanExtra(EXTRA_FIRST_RUN, false)
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+
+        continueButton = findViewById(R.id.siteContinue)
+        continueButton.visibility = if (firstRun) View.VISIBLE else View.GONE
+        continueButton.isEnabled = Account.selectedUrl(this) != null
+        continueButton.setOnClickListener {
+            if (Account.selectedUrl(this) == null) {
+                Toast.makeText(this, R.string.site_choose_first, Toast.LENGTH_SHORT).show()
+            } else {
+                setResult(RESULT_OK)
+                finish()
+            }
+        }
 
         // --- Web sitesi seçimi ---
         siteGroup = findViewById(R.id.siteGroup)
@@ -147,7 +168,8 @@ class SettingsActivity : AppCompatActivity() {
         siteRefresh.visibility = View.VISIBLE
         showSiteMessage(if (list.isEmpty()) R.string.site_empty else null)
 
-        val current = Account.siteToOpen(this)
+        // İlk kurulumda hiçbiri hazır seçili gelmez; kullanıcı kendisi seçer
+        val current = if (firstRun) Account.selectedUrl(this) else Account.siteToOpen(this)
         val byId = HashMap<Int, String>()
         for (link in list) {
             val rb = RadioButton(this)
@@ -163,6 +185,7 @@ class SettingsActivity : AppCompatActivity() {
         siteGroup.setOnCheckedChangeListener { _, id ->
             val url = byId[id] ?: return@setOnCheckedChangeListener
             Account.setSelectedUrl(this, url)
+            continueButton.isEnabled = true
             Toast.makeText(this, R.string.site_saved, Toast.LENGTH_SHORT).show()
         }
     }

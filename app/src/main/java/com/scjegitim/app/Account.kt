@@ -13,9 +13,6 @@ data class SiteLink(val name: String, val url: String, val desc: String)
  */
 object Account {
     private const val PREFS = "meyvem_account"
-    private const val DEFAULT_SITE = "https://scjegitim.blogspot.com"
-    const val DEFAULT_URL = DEFAULT_SITE
-
     data class Identity(val no: String, val uuid: String, val token: String)
 
     private fun p(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -26,8 +23,11 @@ object Account {
         p(c).edit().apply { if (no == null) remove("pending_no") else putString("pending_no", no) }.apply()
     }
 
-    fun gmailDone(c: Context) = p(c).getBoolean("gmail_done", false)
-    fun setGmailDone(c: Context) { p(c).edit().putBoolean("gmail_done", true).apply() }
+    // Google hesabıyla oturum açıldı mı / ilk site seçimi yapıldı mı
+    fun googleDone(c: Context) = p(c).getBoolean("google_done", false)
+    fun setGoogleDone(c: Context) { p(c).edit().putBoolean("google_done", true).apply() }
+    fun siteDone(c: Context) = p(c).getBoolean("site_done", false)
+    fun setSiteDone(c: Context) { p(c).edit().putBoolean("site_done", true).apply() }
 
     /** Kayıt tamamlandıysa kimlik; aksi halde null. */
     fun identity(c: Context): Identity? {
@@ -41,7 +41,8 @@ object Account {
     fun saveRegistration(c: Context, no: String, uuid: String, token: String) {
         p(c).edit()
             .putString("no", no).putString("uuid", uuid).putString("token", token)
-            .putBoolean("gmail_done", false)
+            .putBoolean("google_done", false)
+            .putBoolean("site_done", false)
             .remove("pending_no")
             .apply()
     }
@@ -79,10 +80,10 @@ object Account {
     fun isHttps(url: String?): Boolean =
         url != null && url.startsWith("https://", ignoreCase = true) && url.length > 10
 
-    /** Açılacak adres: seçili → listenin ilki → varsayılan. */
-    fun siteToOpen(c: Context): String {
+    /** Açılacak adres: seçili → listenin ilki. Liste hiç yoksa null (uygulamada hazır site yok). */
+    fun siteToOpen(c: Context): String? {
         selectedUrl(c)?.let { return it }
-        return cachedLinks(c).firstOrNull()?.url ?: DEFAULT_SITE
+        return cachedLinks(c).firstOrNull()?.url
     }
 
     /** Sunucudan listeyi yeniler ve önbelleğe yazar. Ağ işlemi yapar: arka planda çağırın. */
