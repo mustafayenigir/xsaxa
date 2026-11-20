@@ -2,18 +2,31 @@
 const $ = (id) => document.getElementById(id);
 let step = 'enter';
 let busy = false;
+let signedIn = false;
+let pollTimer = null;
+
+async function pollGoogle() {
+  const r = await window.api.googleStatus();
+  if (step !== 'google') return;
+  signedIn = !!(r && r.signedIn);
+  $('go').textContent = signedIn ? 'Devam Et' : VIEW.google.button;
+  $('msg').textContent = signedIn ? 'Oturum açıldı ✓' : '';
+}
 
 const INFO_NO = 'Yetkili kişiler giriş numaranızı (örnek: 00xxxxxx-xxxxx) yalnızca bir kere gireceksiniz. '
-  + 'Sonraki açılışlarda yalnızca şifreniz sorulur.\n\nGiriş tarihleriniz ve uygulamada geçirdiğiniz süre kaydedilir.';
+  + 'Sonraki açılışlarda yalnızca şifreniz sorulur.';
 const INFO_PASSWORD = 'En az 4 karakterli bir şifre belirleyin.\n\n'
   + 'Şifrenizi unutursanız uygulamayı silip yeniden yüklemeniz gerekir '
   + '(Windows: %APPDATA%\\Meyvem klasörünü silip uygulamayı yeniden başlatın).';
-const INFO_GMAIL = 'Gmail adresiniz yalnızca bu uygulamaya özel olarak kullanılmaktadır ve web sitesine giriş için şart ve zorunludur.';
+const INFO_GOOGLE = 'Web sitelerine girebilmek için Google hesabınızla oturum açın. '
+  + 'Bu oturum, uygulamadaki tüm sitelerde geçerli olur; her sitede yeniden giriş yapmanız gerekmez.';
+const INFO_SITE = 'Şimdi Ayarlar açılacak. Görüntülemek istediğiniz web sitesini seçip Devam Et\'e tıklayın.';
 
 const VIEW = {
   no: { title: 'Giriş Numarası', info: INFO_NO, button: 'Devam Et' },
   password: { title: 'Şifre Oluştur', info: INFO_PASSWORD, button: 'Kaydet' },
-  gmail: { title: 'Gmail Adresi', info: INFO_GMAIL, button: 'Kaydet ve Devam Et' },
+  google: { title: 'Google Hesabı', info: INFO_GOOGLE, button: 'Google ile Oturum Aç' },
+  site: { title: 'Web Sitesi', info: INFO_SITE, button: 'Ayarları Aç' },
   enter: { title: 'Şifreyi Gir', info: '', button: 'Giriş Yap' },
 };
 
@@ -27,11 +40,16 @@ function render(s) {
   $('noRow').hidden = step !== 'no';
   $('pwd').hidden = !(step === 'password' || step === 'enter');
   $('confirmRow').hidden = step !== 'password';
-  $('gmailRow').hidden = step !== 'gmail';
   $('hint').textContent = '';
   $('msg').textContent = '';
-  const first = { no: 'no', password: 'pwd', gmail: 'gmail', enter: 'pwd' }[step];
-  $(first).focus();
+  clearInterval(pollTimer);
+  signedIn = false;
+  if (step === 'google') {
+    pollTimer = setInterval(pollGoogle, 1500);
+    pollGoogle();
+  }
+  const first = { no: 'no', password: 'pwd', enter: 'pwd' }[step];
+  if (first) $(first).focus();
 }
 
 async function init() {
@@ -50,7 +68,21 @@ $('form').addEventListener('submit', async (e) => {
     let r;
     if (step === 'no') r = await window.api.checkNo($('no').value);
     else if (step === 'password') r = await window.api.createPassword($('pwd').value, $('pwd2').value);
-    else if (step === 'gmail') r = await window.api.saveGmail($('gmail').value);
+    else if (step === 'google') {
+      if (signedIn) {
+        r = await window.api.googleDone();
+      } else {
+        const o = await window.api.googleOpen();
+        r = o && o.signedIn ? await window.api.googleDone() : { ok: true, stay: true };
+        if (r.stay) $('msg').textContent = 'Açılan pencerede Google hesabınızla oturum açın.';
+      }
+      if (r.stay) { busy = false; $('go').disabled = false; return; }
+    } else if (step === 'site') {
+      r = await window.api.siteStart();
+      r = { ...r, stay: true };
+      busy = false; $('go').disabled = false;
+      return;
+    }
     else r = await window.api.unlock($('pwd').value);
 
     if (r && r.step && r.step !== step) {
@@ -60,7 +92,7 @@ $('form').addEventListener('submit', async (e) => {
       render(r.step);
       $('msg').textContent = err || '';
     } else if (r && r.ok) {
-      // Site açılıyor (gmail / enter adımı): sayfa birazdan değişecek
+      // Site açılıyor (enter adımı): sayfa birazdan değişecek
       $('msg').textContent = 'Site açılıyor…';
       keepDisabled = true;
     } else {

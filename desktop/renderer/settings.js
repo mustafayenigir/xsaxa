@@ -37,6 +37,8 @@ function showSites(st, note) {
     return;
   }
   $('siteRefresh').hidden = false;
+  $('siteContinue').hidden = !st.firstRun;
+  $('siteContinue').disabled = !st.selected;
   if (!st.links.length) { setMsg('Listede site bulunamadı.'); return; }
   setMsg(note || '');
   st.links.forEach((l) => {
@@ -76,6 +78,10 @@ async function refreshSites() {
   }
 }
 $('siteRefresh').addEventListener('click', refreshSites);
+$('siteContinue').addEventListener('click', async () => {
+  const r = await window.api.continueSite();
+  if (r && !r.ok) { $('siteMsg').textContent = r.error || 'Devam etmek için bir site seçin.'; $('siteMsg').hidden = false; }
+});
 window.api.getSites().then((st) => { showSites(st); if (st && st.registered) refreshSites(); });
 
 window.api.onSettingsUpdated(show);

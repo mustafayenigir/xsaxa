@@ -7,7 +7,11 @@ if (location.protocol === 'file:') {
   contextBridge.exposeInMainWorld('api', {
     lockState: () => ipcRenderer.invoke('lock:state'),
     checkNo: (no) => ipcRenderer.invoke('lock:checkNo', no),
-    saveGmail: (gmail) => ipcRenderer.invoke('lock:gmail', gmail),
+    googleOpen: () => ipcRenderer.invoke('lock:googleOpen'),
+    googleStatus: () => ipcRenderer.invoke('lock:googleStatus'),
+    googleDone: () => ipcRenderer.invoke('lock:googleDone'),
+    siteStart: () => ipcRenderer.invoke('lock:siteStart'),
+    continueSite: () => ipcRenderer.invoke('sites:continue'),
     getSites: () => ipcRenderer.invoke('sites:get'),
     refreshSites: () => ipcRenderer.invoke('sites:refresh'),
     selectSite: (url) => ipcRenderer.invoke('sites:select', url),

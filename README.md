@@ -1,6 +1,6 @@
 # Meyvem — Android Uygulaması
 
-`https://scjegitim.blogspot.com` sitesini açan, şifre kilitli, ekran görüntüsü engelli
+E-Tablodaki listeden seçilen web sitesini açan, şifre kilitli, ekran görüntüsü engelli
 ve ekran kapanınca sesi devam ettiren tek görevli bir Android uygulaması.
 
 ## Özellikler
@@ -70,7 +70,7 @@ https://github.com/mustafayenigir/xsaxa/releases/download/windows/Meyvem.exe
 
 
 ## Kayıt / yoklama sistemi (v2)
-- Akış: giriş numarası (bir kere) → şifre oluştur → Gmail → site. Sonraki açılışlarda yalnızca şifre.
+- Akış: giriş numarası (bir kere) → şifre oluştur → Google hesabıyla oturum aç → Ayarlar'da site seç → Devam Et → site. Sonraki açılışlarda yalnızca şifre.
 - Sunucu: `apps_script/Code.gs` (Google Apps Script). Kurulum: `apps_script/KURULUM.md`.
 - Site listesi E-Tablodaki `web site linkleri` sayfasından gelir; kullanıcı Ayarlar'dan seçer.
 - Android'de uygulamanın sesinin ekran kaydedicilerle yakalanması engellenir (`allowAudioPlaybackCapture=false`, `ALLOW_CAPTURE_BY_NONE`). Windows'ta ses kaydını engelleyen bir mekanizma yoktur.

@@ -6,10 +6,10 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-const DEFAULT_SITE = 'https://scjegitim.blogspot.com';
 const API_URL = 'https://script.google.com/macros/s/AKfycbyUwCt2kyUA4npnPIaqJztXCNsq6B0anGvRWaW5UwfHKBhHbgGadagfocj-KH2jeSYt/exec';
 const NO_RE = /^[A-Z0-9-]{6,24}$/;
-const GMAIL_RE = /^[a-z0-9._%+-]+@(gmail|googlemail)\.com$/;
+const GOOGLE_SIGNIN_URL = 'https://accounts.google.com/ServiceLogin?hl=tr&continue=https%3A%2F%2Fmyaccount.google.com%2F';
+const GOOGLE_HOSTS = /(^|\.)(google\.com|gstatic\.com|googleusercontent\.com|googleapis.com|youtube\.com)$/i;
 const ICON = path.join(__dirname, 'build', 'icon.png');
 const PRELOAD = path.join(__dirname, 'preload.js');
 
@@ -27,7 +27,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 const DEFAULTS = {
   keepAudio: true, theme: 'system', zoom: 100, pwdHash: null, pwdSalt: null,
   // kayıt / yoklama
-  pendingNo: null, no: null, uuid: null, token: null, gmailDone: false,
+  pendingNo: null, no: null, uuid: null, token: null, googleDone: false, siteDone: false,
   siteUrl: null, links: [], pendingSeconds: 0,
 };
 let settingsFile = null;
@@ -98,7 +98,11 @@ function identity() {
 }
 
 function currentStep() {
-  if (identity()) return settings.gmailDone ? 'enter' : 'gmail';
+  if (identity()) {
+    if (!settings.googleDone) return 'google';
+    if (!settings.siteDone) return 'site';
+    return 'enter';
+  }
   if (settings.pendingNo) return 'password';
   return 'no';
 }
@@ -133,11 +137,57 @@ async function refreshLinks() {
   return settings.links;
 }
 
-/** Açılacak adres: seçili → listenin ilki → varsayılan. */
+/** Açılacak adres: seçili → listenin ilki. Liste hiç yoksa null (uygulamada hazır site yok). */
 function siteToOpen() {
   if (settings.siteUrl && /^https:\/\/./i.test(settings.siteUrl)) return settings.siteUrl;
   const first = (settings.links || [])[0];
-  return first ? first.url : DEFAULT_SITE;
+  return first ? first.url : null;
+}
+
+// ---- Google hesabı oturumu (adres yazılmaz; oturum, uygulamadaki tüm sitelerde geçerli olur)
+let googleWin = null;
+
+async function googleSignedIn() {
+  try {
+    const all = await session.defaultSession.cookies.get({});
+    return all.some((c) => (c.name === 'SID' || c.name === '__Secure-1PSID') && /google\.com$/i.test(c.domain || ''));
+  } catch (_) {
+    return false;
+  }
+}
+
+function closeGoogleWin() {
+  if (googleWin && !googleWin.isDestroyed()) googleWin.close();
+  googleWin = null;
+}
+
+function openGoogleWin() {
+  if (googleWin && !googleWin.isDestroyed()) { googleWin.focus(); return; }
+  googleWin = new BrowserWindow({
+    width: 520,
+    height: 740,
+    parent: win || undefined,
+    modal: !!win,
+    title: 'Google hesabı',
+    icon: ICON,
+    autoHideMenuBar: true,
+    backgroundColor: '#ffffff',
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }, // köprü (preload) yok
+  });
+  googleWin.setMenu(null);
+  secure(googleWin);
+  const wc = googleWin.webContents;
+  // Google, "Electron" işaretli tarayıcılarda girişi engelleyebilir; işareti kaldır.
+  wc.setUserAgent(wc.getUserAgent().replace(/\sElectron\/\S+/i, '').replace(/\s?meyvem\/\S+/i, ''));
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('will-navigate', (e, url) => {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== 'https:' || !GOOGLE_HOSTS.test(u.hostname)) e.preventDefault();
+    } catch (_) { e.preventDefault(); }
+  });
+  googleWin.on('closed', () => { googleWin = null; });
+  googleWin.loadURL(GOOGLE_SIGNIN_URL);
 }
 
 // Uygulamada geçen süre: dakikada bir yerel sayaca eklenir, 10 dakikada bir ve kilitlenince/çıkışta sunucuya gider.
@@ -292,6 +342,7 @@ function showLock() {
 }
 
 function loadSite(url) {
+  if (!url) return;
   siteBase = url;
   if (win && unlocked) win.loadURL(url);
 }
@@ -306,7 +357,7 @@ function reconcileSite() {
     saveSettings();
   }
   const want = siteToOpen();
-  if (want !== siteBase) loadSite(want);
+  if (want && want !== siteBase) loadSite(want);
 }
 
 async function openSite(logLogin) {
@@ -317,10 +368,13 @@ async function openSite(logLogin) {
   const id = identity();
   if (logLogin && id) api('login', id); // yoklama tablosuna giriş tarihi (cevabı beklenmez)
 
-  const firstTime = !settings.siteUrl && (settings.links || []).length === 0;
-  if (firstTime && id) {
-    await refreshLinks(); // liste hiç inmemiş: önce listeyi al, ilk siteyi aç (olmazsa varsayılan)
-    if (unlocked) loadSite(siteToOpen());
+  if (!siteToOpen()) {
+    // Liste hiç inmemiş: önce listeyi al, sonra ilk siteyi aç
+    if (id) await refreshLinks();
+    if (!unlocked) return;
+    const url = siteToOpen();
+    if (url) loadSite(url);
+    else if (win) win.loadURL('about:blank');
   } else {
     loadSite(siteToOpen());
     if (id) refreshLinks().then(reconcileSite);
@@ -497,10 +551,11 @@ ipcMain.handle('lock:create', async (e, pwd, confirm) => {
     settings.no = no;
     settings.uuid = r.uuid;
     settings.token = hash;
-    settings.gmailDone = false;
+    settings.googleDone = false;
+    settings.siteDone = false;
     settings.pendingNo = null;
     saveSettings();
-    return { ok: true, step: 'gmail' };
+    return { ok: true, step: 'google' };
   }
   if (r.error === 'invalid') {
     settings.pendingNo = null; // numara bu arada listeden çıkarılmış
@@ -510,21 +565,37 @@ ipcMain.handle('lock:create', async (e, pwd, confirm) => {
   return { ok: false, error: errText(r.error) };
 });
 
-// 3) Gmail adresi
-ipcMain.handle('lock:gmail', async (e, gmail) => {
+// 3) Google hesabıyla oturum açma
+ipcMain.handle('lock:googleOpen', async (e) => {
+  if (!fromLocal(e)) return { ok: false };
+  if (currentStep() !== 'google') return { ok: true, step: currentStep() };
+  if (await googleSignedIn()) return { ok: true, signedIn: true };
+  openGoogleWin();
+  return { ok: true, signedIn: false };
+});
+
+ipcMain.handle('lock:googleStatus', async (e) => {
+  if (!fromLocal(e)) return { signedIn: false };
+  const signedIn = await googleSignedIn();
+  if (signedIn) closeGoogleWin(); // giriş tamamlandı: pencereyi kendiliğinden kapat
+  return { signedIn };
+});
+
+ipcMain.handle('lock:googleDone', async (e) => {
   if (!fromLocal(e)) return { ok: false, error: 'İzin yok.' };
-  const id = identity();
-  if (!id) return { ok: false, step: currentStep(), error: 'Önce giriş numaranızı girin.' };
-  gmail = String(gmail || '').trim().toLowerCase();
-  if (!GMAIL_RE.test(gmail)) return { ok: false, error: 'Lütfen geçerli bir Gmail adresi girin (örnek: ad@gmail.com).' };
-  const r = await api('gmail', { ...id, gmail });
-  if (!r) return { ok: false, error: NET_ERR };
-  if (!r.ok) {
-    return { ok: false, error: r.error === 'bad_request' ? 'Lütfen geçerli bir Gmail adresi girin (örnek: ad@gmail.com).' : errText(r.error) };
-  }
-  settings.gmailDone = true;
+  if (currentStep() !== 'google') return { ok: true, step: currentStep() };
+  if (!(await googleSignedIn())) return { ok: false, error: 'Henüz Google hesabıyla oturum açılmadı.' };
+  closeGoogleWin();
+  settings.googleDone = true;
   saveSettings();
-  openSite(false); // ilk giriş tarihi kayıt sırasında zaten yazıldı
+  setTimeout(openSettings, 300); // sıradaki adım: ilk ayarlar (site seçimi)
+  return { ok: true, step: 'site' };
+});
+
+// 3b) İlk ayarlar: site seçilip "Devam Et" denir
+ipcMain.handle('lock:siteStart', (e) => {
+  if (!fromLocal(e)) return { ok: false };
+  if (currentStep() === 'site') openSettings();
   return { ok: true };
 });
 
@@ -546,7 +617,10 @@ ipcMain.handle('lock:unlock', async (e, pwd) => {
 
 // Web sitesi listesi (Ayarlar)
 function sitesState() {
-  return { registered: !!identity(), links: settings.links || [], selected: siteToOpen() };
+  const firstRun = currentStep() === 'site';
+  // İlk kurulumda hiçbiri hazır seçili gelmez; kullanıcı kendisi seçer
+  const selected = firstRun ? settings.siteUrl : siteToOpen();
+  return { registered: !!identity(), links: settings.links || [], selected, firstRun };
 }
 
 ipcMain.handle('sites:get', (e) => (fromLocal(e) ? sitesState() : null));
@@ -556,6 +630,16 @@ ipcMain.handle('sites:refresh', async (e) => {
   const list = await refreshLinks();
   if (list) reconcileSite();
   return { ...sitesState(), refreshed: !!list };
+});
+
+ipcMain.handle('sites:continue', (e) => {
+  if (!fromLocal(e)) return { ok: false };
+  if (currentStep() !== 'site' || !settings.siteUrl) return { ok: false, error: 'Devam etmek için bir site seçin.' };
+  settings.siteDone = true;
+  saveSettings();
+  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
+  openSite(false); // ilk giriş tarihi kayıt sırasında zaten yazıldı
+  return { ok: true };
 });
 
 ipcMain.handle('sites:select', (e, url) => {
