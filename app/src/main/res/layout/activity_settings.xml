@@ -102,6 +102,24 @@
             android:layout_marginTop="8dp"
             android:text="@string/site_refresh" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchPauseRec"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/rec_pause_title"
+            android:textColor="@color/on_background"
+            android:textSize="16sp" />
+
+        <TextView
+            style="@style/SettingsHint"
+            android:text="@string/rec_pause_desc" />
+
+        <TextView
+            android:id="@+id/recStatus"
+            style="@style/SettingsHint"
+            android:textStyle="bold" />
+
         <!-- GÖRÜNÜM -->
         <TextView
             style="@style/SettingsSection"

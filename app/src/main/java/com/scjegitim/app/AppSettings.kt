@@ -24,6 +24,12 @@ object AppSettings {
         prefs(c).edit().putBoolean("keep_audio", v).apply()
     }
 
+    // Başka bir uygulama ses kaydı yaparken (ekran kaydedici gibi) içeriği durdur
+    fun pauseOnRecording(c: Context): Boolean = prefs(c).getBoolean("pause_on_recording", true)
+    fun setPauseOnRecording(c: Context, v: Boolean) {
+        prefs(c).edit().putBoolean("pause_on_recording", v).apply()
+    }
+
     // Tema: sistem / gündüz / gece
     fun themeMode(c: Context): Int = prefs(c).getInt("theme_mode", THEME_SYSTEM)
     fun setThemeMode(c: Context, v: Int) {

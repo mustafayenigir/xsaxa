@@ -78,6 +78,12 @@
     <string name="battery_hint">Xiaomi telefonlarda sistem arka plandaki sesi kesebilir. Açılan ekranda Meyvem için pil tasarrufunu "Kısıtlama yok" yapın.</string>
     <string name="battery_open_failed">Pil ayarları açılamadı. Ayarlar → Uygulamalar → Meyvem bölümünden pil kısıtlamasını kaldırın.</string>
 
+    <string name="rec_notice">Ses kaydı algılandı. İçerik durduruldu; kayıt bitince geri gelecek.</string>
+    <string name="rec_pause_title">Kayıt algılanınca içeriği durdur</string>
+    <string name="rec_pause_desc">Telefonda başka bir uygulama (ekran kaydedici gibi) ses kaydı başlatırsa site kapatılır ve ses kesilir; kayıt bitince site geri gelir.</string>
+    <string name="rec_status_none">Şu an algılanan ses kaydı: yok</string>
+    <string name="rec_status_some">Şu an algılanan ses kaydı: %1$d (kaynak kodu: %2$s)</string>
+
     <string name="section_theme">Görünüm</string>
     <string name="theme_system">Sistemle aynı</string>
     <string name="theme_light">Gündüz modu</string>

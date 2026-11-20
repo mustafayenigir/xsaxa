@@ -68,6 +68,13 @@ class MainActivity : AppCompatActivity() {
     private var step = Step.NO
     private var busy = false
     private val ui = Handler(Looper.getMainLooper())
+    // Ses kaydı algılanınca içerik durdurulur (bkz. RecordingWatch)
+    private lateinit var recordNotice: View
+    private var recCallback: android.media.AudioManager.AudioRecordingCallback? = null
+    private var recPaused = false
+    private var recResumeUrl: String? = null
+    private val recResume = Runnable { resumeAfterRecording() }
+
     private var googleLoaded = false
     private val googlePoll = object : Runnable {
         override fun run() {
@@ -122,6 +129,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        MeyvemApp.blockAudioCapture(this)
+
         // === EKRAN GÖRÜNTÜSÜ / EKRAN KAYDI ENGELİ (banka uygulamaları gibi) ===
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
@@ -135,6 +144,7 @@ class MainActivity : AppCompatActivity() {
         lockTitle = findViewById(R.id.lockTitle)
         infoText = findViewById(R.id.infoText)
         noInput = findViewById(R.id.noInput)
+        recordNotice = findViewById(R.id.recordNotice)
         googleContainer = findViewById(R.id.googleContainer)
         googleWebView = findViewById(R.id.googleWebView)
         googleStatus = findViewById(R.id.googleStatus)
@@ -412,6 +422,7 @@ class MainActivity : AppCompatActivity() {
         applySettings()
         startKeepAliveService()
         beginUsage()
+        startRecordingWatch()
 
         val id = Account.identity(this)
         if (logLogin && id != null) io.execute { Api.login(id) }
@@ -468,6 +479,7 @@ class MainActivity : AppCompatActivity() {
     private fun lockApp() {
         exitBlackMode()
         endUsage()
+        stopRecordingWatch()
         unlocked = false
         sessionUnlocked = false
         lastUrl = null
@@ -480,6 +492,48 @@ class MainActivity : AppCompatActivity() {
         settingsButton.visibility = View.VISIBLE
         stopService(Intent(this, AudioKeepAliveService::class.java))
         showStep(currentStep())
+    }
+
+    // ---------------- Ses kaydı algılama ----------------
+
+    private fun startRecordingWatch() {
+        if (recCallback != null) return
+        recCallback = RecordingWatch.register(this, ui) { onRecordings(it) }
+        onRecordings(RecordingWatch.current(this))
+    }
+
+    private fun stopRecordingWatch() {
+        RecordingWatch.unregister(this, recCallback)
+        recCallback = null
+        ui.removeCallbacks(recResume)
+        if (recPaused) resumeAfterRecording(reload = false)
+    }
+
+    private fun onRecordings(sources: List<Int>) {
+        if (!unlocked) return
+        if (sources.isNotEmpty() && AppSettings.pauseOnRecording(this)) {
+            ui.removeCallbacks(recResume)
+            if (!recPaused) {
+                recPaused = true
+                recResumeUrl = lastUrl ?: siteBase
+                hideMenuPanel()
+                // Sayfa tamamen boşaltılır: sesin kesin olarak durması için
+                webView.loadUrl("about:blank")
+                recordNotice.visibility = View.VISIBLE
+            }
+        } else if (recPaused) {
+            // Kayıt bitti: kısa bir bekleyişten sonra içeriği geri getir
+            ui.removeCallbacks(recResume)
+            ui.postDelayed(recResume, 1500)
+        }
+    }
+
+    private fun resumeAfterRecording(reload: Boolean = true) {
+        recPaused = false
+        recordNotice.visibility = View.GONE
+        val url = recResumeUrl ?: siteBase
+        recResumeUrl = null
+        if (reload && unlocked && url != null) webView.loadUrl(url)
     }
 
     // ---------------- Uygulamada geçen süre ----------------
@@ -729,6 +783,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        MeyvemApp.blockAudioCapture(this)
         if (unlocked) {
             applySettings()
             webView.onResume()
@@ -760,6 +815,7 @@ class MainActivity : AppCompatActivity() {
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
         when {
+            recPaused -> Unit
             menuPanel.visibility == View.VISIBLE -> hideMenuPanel()
             blackMode -> exitBlackMode()
             step == Step.GOOGLE && !unlocked && googleWebView.canGoBack() -> googleWebView.goBack()
@@ -771,6 +827,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         ui.removeCallbacks(usageTick)
         ui.removeCallbacks(googlePoll)
+        RecordingWatch.unregister(this, recCallback)
+        ui.removeCallbacks(recResume)
         googleWebView.destroy()
         if (unlocked) tickUsage()
         stopService(Intent(this, AudioKeepAliveService::class.java))

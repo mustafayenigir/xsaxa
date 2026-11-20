@@ -25,6 +25,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private var firstRun = false
+    private lateinit var recStatus: TextView
+    private var recCallback: android.media.AudioManager.AudioRecordingCallback? = null
+    private val uiHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private lateinit var continueButton: Button
 
     private lateinit var zoomSeek: SeekBar
@@ -76,6 +79,12 @@ class SettingsActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.batteryButton).setOnClickListener { openBatterySettings() }
 
+        val pauseRec = findViewById<SwitchMaterial>(R.id.switchPauseRec)
+        pauseRec.isChecked = AppSettings.pauseOnRecording(this)
+        pauseRec.setOnCheckedChangeListener { _, checked -> AppSettings.setPauseOnRecording(this, checked) }
+        recStatus = findViewById(R.id.recStatus)
+        showRecStatus(RecordingWatch.current(this))
+
         // --- Görünüm (gece / gündüz) ---
         val group = findViewById<RadioGroup>(R.id.themeGroup)
         val checkedId = when (AppSettings.themeMode(this)) {
@@ -124,6 +133,22 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<Button>(R.id.zoomReset).setOnClickListener {
             zoomSeek.progress = (AppSettings.ZOOM_DEFAULT - AppSettings.ZOOM_MIN) / AppSettings.ZOOM_STEP
         }
+    }
+
+    private fun showRecStatus(sources: List<Int>) {
+        recStatus.text = if (sources.isEmpty()) getString(R.string.rec_status_none)
+        else getString(R.string.rec_status_some, sources.size, sources.joinToString(","))
+    }
+
+    override fun onStart() {
+        super.onStart()
+        recCallback = RecordingWatch.register(this, uiHandler) { showRecStatus(it) }
+    }
+
+    override fun onStop() {
+        RecordingWatch.unregister(this, recCallback)
+        recCallback = null
+        super.onStop()
     }
 
     private fun showSiteMessage(resId: Int?) {
