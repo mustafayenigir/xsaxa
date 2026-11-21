@@ -7,6 +7,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbyUwCt2kyUA4npnPIaqJztXCNsq6B0anGvRWaW5UwfHKBhHbgGadagfocj-KH2jeSYt/exec';
+const adblock = require('./adblock');
 const NO_RE = /^[A-Z0-9-]{6,24}$/;
 const GOOGLE_SIGNIN_URL = 'https://accounts.google.com/ServiceLogin?hl=tr&continue=https%3A%2F%2Fmyaccount.google.com%2F';
 const GOOGLE_HOSTS = /(^|\.)(google\.com|gstatic\.com|googleusercontent\.com|googleapis.com|youtube\.com)$/i;
@@ -25,7 +26,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 // ---------------------------------------------------------------- ayarlar
 const DEFAULTS = {
-  keepAudio: true, theme: 'system', zoom: 100, pwdHash: null, pwdSalt: null,
+  keepAudio: true, adBlock: true, theme: 'system', zoom: 100, pwdHash: null, pwdSalt: null,
   // kayıt / yoklama
   pendingNo: null, no: null, uuid: null, token: null, googleDone: false, siteDone: false,
   siteUrl: null, links: [], pendingSeconds: 0,
@@ -52,6 +53,7 @@ function saveSettings() {
 function publicSettings() {
   return {
     keepAudio: settings.keepAudio,
+    adBlock: settings.adBlock !== false,
     theme: settings.theme,
     zoom: settings.zoom,
     zoomMin: ZOOM_MIN,
@@ -249,6 +251,7 @@ let blackWin = null;
 let unlocked = false;
 let blocker = null;
 let themeCssKey = null;
+let adCssKey = null;
 let siteBase = null;
 
 function secure(w) {
@@ -274,6 +277,15 @@ function applySiteSettings() {
   }
   if (nativeTheme.shouldUseDarkColors) {
     wc.insertCSS(DARK_CSS).then((key) => { themeCssKey = key; }).catch(() => {});
+  }
+
+  // Reklam alanlarını gizle (yalnızca http/https sayfalarda)
+  if (adCssKey) {
+    wc.removeInsertedCSS(adCssKey).catch(() => {});
+    adCssKey = null;
+  }
+  if (settings.adBlock !== false && /^https?:/i.test(wc.getURL())) {
+    wc.insertCSS(adblock.css).then((key) => { adCssKey = key; }).catch(() => {});
   }
 }
 
@@ -401,7 +413,7 @@ function openSettings() {
     resizable: false,
     minimizable: false,
     maximizable: false,
-    title: 'Ayarlar',
+    title: 'Ana Sayfa',
     icon: ICON,
     backgroundColor: '#0F1522',
     autoHideMenuBar: true,
@@ -470,7 +482,7 @@ function buildMenu() {
     {
       label: 'Meyvem',
       submenu: [
-        { label: 'Ayarlar', accelerator: 'CmdOrCtrl+,', click: openSettings },
+        { label: 'Ana Sayfa', accelerator: 'CmdOrCtrl+,', click: openSettings },
         { label: 'Siyah ekran', accelerator: 'CmdOrCtrl+B', enabled: unlocked, click: enterBlack },
         { label: 'Uygulamayı kilitle', accelerator: 'CmdOrCtrl+L', enabled: unlocked, click: lockApp },
         { type: 'separator' },
@@ -632,25 +644,54 @@ ipcMain.handle('sites:refresh', async (e) => {
   return { ...sitesState(), refreshed: !!list };
 });
 
-ipcMain.handle('sites:continue', (e) => {
-  if (!fromLocal(e)) return { ok: false };
-  if (currentStep() !== 'site' || !settings.siteUrl) return { ok: false, error: 'Devam etmek için bir site seçin.' };
-  settings.siteDone = true;
-  saveSettings();
-  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
-  openSite(false); // ilk giriş tarihi kayıt sırasında zaten yazıldı
-  return { ok: true };
-});
-
 ipcMain.handle('sites:select', (e, url) => {
   if (!fromLocal(e)) return null;
   // Yalnızca sunucudan gelen listedeki adresler seçilebilir
-  if ((settings.links || []).some((l) => l.url === url)) {
-    settings.siteUrl = url;
+  if (!(settings.links || []).some((l) => l.url === url)) return sitesState();
+  settings.siteUrl = url;
+  saveSettings();
+  const first = currentStep() === 'site';
+  if (first) {
+    settings.siteDone = true; // ilk kurulumda logoya tıklamak seçer ve siteyi açar
     saveSettings();
-    if (unlocked) loadSite(siteToOpen());
   }
-  return sitesState();
+  if (first || unlocked) {
+    if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
+    if (first) openSite(false); // ilk giriş tarihi kayıt sırasında zaten yazıldı
+    else loadSite(siteToOpen());
+  }
+  return { ...sitesState(), picked: true, opened: first || unlocked };
+});
+
+// Site logosu (favicon): indirilir, cihazda saklanır, veri adresi olarak verilir
+const iconMem = new Map();
+ipcMain.handle('sites:icon', async (e, url) => {
+  if (!fromLocal(e)) return null;
+  let host;
+  try { host = new URL(String(url)).hostname.toLowerCase(); } catch (_) { return null; }
+  if (!/^[a-z0-9.-]+$/.test(host)) return null;
+  if (iconMem.has(host)) return iconMem.get(host);
+  const dir = path.join(app.getPath('userData'), 'icons');
+  const file = path.join(dir, host + '.png');
+  try {
+    let buf = null;
+    if (fs.existsSync(file)) {
+      buf = fs.readFileSync(file);
+    } else {
+      const res = await net.fetch('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=128',
+        { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) return null;
+      buf = Buffer.from(await res.arrayBuffer());
+      if (!buf.length) return null;
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(file, buf);
+    }
+    const dataUrl = 'data:image/png;base64,' + buf.toString('base64');
+    iconMem.set(host, dataUrl);
+    return dataUrl;
+  } catch (_) {
+    return null;
+  }
 });
 
 ipcMain.handle('settings:get', (e) => (fromLocal(e) ? publicSettings() : null));
@@ -658,12 +699,16 @@ ipcMain.handle('settings:get', (e) => (fromLocal(e) ? publicSettings() : null));
 ipcMain.handle('settings:set', (e, patch) => {
   if (!fromLocal(e) || !patch || typeof patch !== 'object') return null;
   if (typeof patch.keepAudio === 'boolean') settings.keepAudio = patch.keepAudio;
+  const adBefore = settings.adBlock !== false;
+  if (typeof patch.adBlock === 'boolean') settings.adBlock = patch.adBlock;
   if (THEMES.includes(patch.theme)) settings.theme = patch.theme;
   if (Number.isFinite(patch.zoom)) {
     settings.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(patch.zoom / 10) * 10));
   }
   saveSettings();
   applyAll();
+  // Reklam ayarı değiştiyse açık sayfayı yenile ki istekler yeni ayara göre yüklensin
+  if (unlocked && win && adBefore !== (settings.adBlock !== false)) win.webContents.reload();
   return publicSettings();
 });
 
@@ -683,6 +728,11 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
+    // Reklam engelleme: bilinen reklam sunucularına giden istekleri iptal et (Ayarlar'dan kapatılabilir)
+    const adUrls = adblock.domains.map((d) => `*://*.${d}/*`);
+    session.defaultSession.webRequest.onBeforeRequest({ urls: adUrls }, (details, cb) => {
+      cb({ cancel: settings.adBlock !== false });
+    });
     settingsFile = path.join(app.getPath('userData'), 'settings.json');
     loadSettings();
     nativeTheme.themeSource = settings.theme;

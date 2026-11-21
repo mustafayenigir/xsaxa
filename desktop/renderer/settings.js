@@ -4,6 +4,7 @@ const $ = (id) => document.getElementById(id);
 function show(s) {
   if (!s) return;
   $('keepAudio').checked = s.keepAudio;
+  $('adBlock').checked = s.adBlock;
   document.querySelectorAll('input[name="theme"]').forEach((r) => { r.checked = r.value === s.theme; });
   $('zoom').min = s.zoomMin;
   $('zoom').max = s.zoomMax;
@@ -16,6 +17,7 @@ async function change(patch) {
 }
 
 $('keepAudio').addEventListener('change', (e) => change({ keepAudio: e.target.checked }));
+$('adBlock').addEventListener('change', (e) => change({ adBlock: e.target.checked }));
 document.querySelectorAll('input[name="theme"]').forEach((r) => {
   r.addEventListener('change', () => { if (r.checked) change({ theme: r.value }); });
 });
@@ -25,7 +27,7 @@ $('plus').addEventListener('click', () => change({ zoom: Number($('zoom').value)
 $('reset').addEventListener('click', () => change({ zoom: 100 }));
 $('close').addEventListener('click', () => window.close());
 
-// ---- Web sitesi listesi (metinler textContent ile yazılır; sunucudan gelen veri HTML olarak yorumlanmaz)
+// ---- Web siteleri: logo kutucukları (metinler/logolar textContent ve img.src ile yazılır; HTML yorumlanmaz)
 function showSites(st, note) {
   const box = $('sites');
   box.textContent = '';
@@ -37,34 +39,29 @@ function showSites(st, note) {
     return;
   }
   $('siteRefresh').hidden = false;
-  $('siteContinue').hidden = !st.firstRun;
-  $('siteContinue').disabled = !st.selected;
   if (!st.links.length) { setMsg('Listede site bulunamadı.'); return; }
   setMsg(note || '');
   st.links.forEach((l) => {
-    const label = document.createElement('label');
-    label.className = 'opt';
-    const radio = document.createElement('input');
-    radio.type = 'radio';
-    radio.name = 'site';
-    radio.checked = l.url === st.selected;
-    radio.addEventListener('change', async () => {
-      if (radio.checked) showSites(await window.api.selectSite(l.url), 'Site değiştirildi.');
+    const tile = document.createElement('button');
+    tile.className = 'tile' + (l.url === st.selected ? ' sel' : '');
+    tile.title = l.desc ? l.name + ' — ' + l.desc : l.name; // üzerine gelince adı görünür
+    tile.setAttribute('aria-label', l.name);
+    const letter = document.createElement('span');
+    letter.textContent = (l.name.trim()[0] || '?').toUpperCase(); // logo gelene kadar baş harf
+    tile.appendChild(letter);
+    tile.addEventListener('click', async () => {
+      const r = await window.api.selectSite(l.url);
+      if (r && !r.opened) showSites(r, 'Seçildi. Giriş yapınca bu site açılacak.');
     });
-    const text = document.createElement('span');
-    const strong = document.createElement('strong');
-    strong.textContent = l.name;
-    text.appendChild(strong);
-    if (l.desc) {
-      const d = document.createElement('div');
-      d.className = 'hint';
-      d.style.margin = '2px 0 0';
-      d.textContent = l.desc;
-      text.appendChild(d);
-    }
-    label.appendChild(radio);
-    label.appendChild(text);
-    box.appendChild(label);
+    box.appendChild(tile);
+    window.api.siteIcon(l.url).then((src) => {
+      if (!src) return;
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = src;
+      tile.textContent = '';
+      tile.appendChild(img);
+    });
   });
 }
 
@@ -78,10 +75,6 @@ async function refreshSites() {
   }
 }
 $('siteRefresh').addEventListener('click', refreshSites);
-$('siteContinue').addEventListener('click', async () => {
-  const r = await window.api.continueSite();
-  if (r && !r.ok) { $('siteMsg').textContent = r.error || 'Devam etmek için bir site seçin.'; $('siteMsg').hidden = false; }
-});
 window.api.getSites().then((st) => { showSites(st); if (st && st.registered) refreshSites(); });
 
 window.api.onSettingsUpdated(show);

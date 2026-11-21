@@ -11,7 +11,7 @@ if (location.protocol === 'file:') {
     googleStatus: () => ipcRenderer.invoke('lock:googleStatus'),
     googleDone: () => ipcRenderer.invoke('lock:googleDone'),
     siteStart: () => ipcRenderer.invoke('lock:siteStart'),
-    continueSite: () => ipcRenderer.invoke('sites:continue'),
+    siteIcon: (url) => ipcRenderer.invoke('sites:icon', url),
     getSites: () => ipcRenderer.invoke('sites:get'),
     refreshSites: () => ipcRenderer.invoke('sites:refresh'),
     selectSite: (url) => ipcRenderer.invoke('sites:select', url),

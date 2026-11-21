@@ -20,13 +20,13 @@ const INFO_PASSWORD = 'En az 4 karakterli bir şifre belirleyin.\n\n'
   + '(Windows: %APPDATA%\\Meyvem klasörünü silip uygulamayı yeniden başlatın).';
 const INFO_GOOGLE = 'Web sitelerine girebilmek için Google hesabınızla oturum açın. '
   + 'Bu oturum, uygulamadaki tüm sitelerde geçerli olur; her sitede yeniden giriş yapmanız gerekmez.';
-const INFO_SITE = 'Şimdi Ayarlar açılacak. Görüntülemek istediğiniz web sitesini seçip Devam Et\'e tıklayın.';
+const INFO_SITE = 'Şimdi Ana Sayfa açılacak. Görüntülemek istediğiniz sitenin logosuna tıklayın.';
 
 const VIEW = {
   no: { title: 'Giriş Numarası', info: INFO_NO, button: 'Devam Et' },
   password: { title: 'Şifre Oluştur', info: INFO_PASSWORD, button: 'Kaydet' },
   google: { title: 'Google Hesabı', info: INFO_GOOGLE, button: 'Google ile Oturum Aç' },
-  site: { title: 'Web Sitesi', info: INFO_SITE, button: 'Ayarları Aç' },
+  site: { title: 'Web Sitesi', info: INFO_SITE, button: 'Ana Sayfayı Aç' },
   enter: { title: 'Şifreyi Gir', info: '', button: 'Giriş Yap' },
 };
 
