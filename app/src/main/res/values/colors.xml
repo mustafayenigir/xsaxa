@@ -1,10 +1,14 @@
 <resources>
-    <color name="primary">#1E5BB8</color>
-    <color name="primary_dark">#16448A</color>
+    <color name="primary">#FF5A36</color>
+    <color name="primary_dark">#D93F1E</color>
 
-    <!-- Gündüz modu -->
-    <color name="background">#F6F8FC</color>
-    <color name="on_background">#1B2333</color>
-    <color name="on_background_muted">#5A6578</color>
-    <color name="accent_text">#1E5BB8</color>
+    <!-- Gündüz modu: sıcak krem zemin, canlı turuncu-pembe vurgu -->
+    <color name="background">#FFF7EE</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_background">#2A1F3D</color>
+    <color name="on_background_muted">#7B6F8E</color>
+    <color name="accent_text">#D93F1E</color>
+    <color name="gradient_start">#FF9A3D</color>
+    <color name="gradient_end">#FF3D87</color>
+    <color name="outline">#EADFD2</color>
 </resources>

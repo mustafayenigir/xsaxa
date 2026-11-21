@@ -1,8 +1,9 @@
 <resources>
     <string name="app_name">Meyvem</string>
+    <string name="brand">🍓 Meyvem</string>
 
-    <string name="create_title">Şifre Oluştur</string>
-    <string name="enter_title">Şifreyi Gir</string>
+    <string name="create_title">Şifrenizi Oluşturun</string>
+    <string name="enter_title">Hoş Geldiniz 👋</string>
 
     <string name="password_hint">Şifre</string>
     <string name="password_confirm_hint">Şifre (tekrar)</string>
@@ -18,7 +19,7 @@
     <string name="err_wrong">Hatalı şifre.</string>
 
     <!-- Kayıt akışı -->
-    <string name="no_title">Giriş Numarası</string>
+    <string name="no_title">Merhaba! 👋</string>
     <string name="no_hint">Giriş numarası (00xxxxxx-xxxxx)</string>
     <string name="no_button">Devam Et</string>
     <string name="info_no">Yetkili kişiler giriş numaranızı (örnek: 00xxxxxx-xxxxx) yalnızca bir kere gireceksiniz. Sonraki açılışlarda yalnızca şifreniz sorulur.</string>
@@ -26,12 +27,12 @@
     <string name="info_password">En az 4 karakterli bir şifre belirleyin.\n\nŞifrenizi unutursanız uygulamayı silip yeniden yüklemeniz gerekir.</string>
     <string name="create_button_save">Kaydet</string>
 
-    <string name="google_title">Google Hesabı</string>
+    <string name="google_title">Google ile Oturum Açın</string>
     <string name="info_google">Web sitelerine girebilmek için Google hesabınızla oturum açın. Bu oturum, uygulamadaki tüm sitelerde geçerli olur; her sitede yeniden giriş yapmanız gerekmez.</string>
     <string name="google_continue">Devam Et</string>
     <string name="google_status_wait">Google hesabınızla oturum açın.</string>
     <string name="google_status_ok">Oturum açıldı ✓</string>
-    <string name="site_step_title">Web Sitesi</string>
+    <string name="site_step_title">Bir Site Seçin</string>
     <string name="info_site">Şimdi Ana Sayfa açılacak. Görüntülemek istediğiniz sitenin logosuna dokunun.</string>
     <string name="site_step_button">Ana Sayfayı Aç</string>
     <string name="site_continue">Devam Et</string>
@@ -48,7 +49,10 @@
 
     <!-- Ayarlar: web sitesi seçimi -->
     <string name="section_site">Web sitesi</string>
-    <string name="site_hint">Açmak istediğiniz sitenin logosuna dokunun.</string>
+    <string name="site_hint">Açmak istediğiniz sitenin logosuna dokunun. Sağ alttaki ⓘ simgesi siteyi anlatır.</string>
+    <string name="home_greeting">Merhaba! Bugün hangi siteye göz atalım? 👋</string>
+    <string name="site_info_none">Bu site için açıklama yok.</string>
+    <string name="ok">Tamam</string>
     <string name="site_refresh">Listeyi yenile</string>
     <string name="site_loading">Liste yenileniyor…</string>
     <string name="site_not_registered">Site listesi, giriş numaranızla kayıt olduktan sonra görünür.</string>
@@ -73,7 +77,7 @@
     <string name="section_settings">Ayarlar</string>
     <string name="section_ads">Reklam engelleme</string>
     <string name="ad_block_title">Reklamları engelle</string>
-    <string name="ad_block_desc">Bilinen reklam sunucularını engeller ve reklam alanlarını gizler. YouTube video reklamları engellenemez.</string>
+    <string name="ad_block_desc">Bilinen reklam sunucularını engeller ve reklam alanlarını gizler.</string>
     <string name="back">Geri</string>
 
     <string name="section_audio">Ses</string>
@@ -84,10 +88,6 @@
     <string name="battery_open_failed">Pil ayarları açılamadı. Ayarlar → Uygulamalar → Meyvem bölümünden pil kısıtlamasını kaldırın.</string>
 
     <string name="rec_notice">Ses kaydı algılandı. İçerik durduruldu; kayıt bitince geri gelecek.</string>
-    <string name="rec_pause_title">Kayıt algılanınca içeriği durdur</string>
-    <string name="rec_pause_desc">Telefonda başka bir uygulama (ekran kaydedici gibi) ses kaydı başlatırsa site kapatılır ve ses kesilir; kayıt bitince site geri gelir.</string>
-    <string name="rec_status_none">Şu an algılanan ses kaydı: yok</string>
-    <string name="rec_status_some">Şu an algılanan ses kaydı: %1$d (kaynak kodu: %2$s)</string>
 
     <string name="section_theme">Görünüm</string>
     <string name="theme_system">Sistemle aynı</string>

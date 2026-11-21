@@ -3,7 +3,6 @@ package com.scjegitim.app
 /**
  * Basit reklam engelleme: bilinen reklam sunucularına giden istekleri iptal eder ve
  * sayfadaki reklam alanlarını gizler. Liste: adblock/domains.txt (Windows sürümüyle aynı).
- * Not: YouTube video reklamları aynı sunucudan geldiği için bununla engellenemez.
  */
 object AdBlock {
     private val DOMAINS = hashSetOf(

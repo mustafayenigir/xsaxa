@@ -520,7 +520,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun onRecordings(sources: List<Int>) {
         if (!unlocked) return
-        if (sources.isNotEmpty() && AppSettings.pauseOnRecording(this)) {
+        if (sources.isNotEmpty()) {
             ui.removeCallbacks(recResume)
             if (!recPaused) {
                 recPaused = true

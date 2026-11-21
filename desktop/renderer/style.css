@@ -1,22 +1,30 @@
 :root {
-  --bg: #f6f8fc;
+  --bg: #fff7ee;
   --card: #ffffff;
-  --text: #1b2333;
-  --muted: #5a6578;
-  --accent: #1e5bb8;
+  --text: #2a1f3d;
+  --muted: #7b6f8e;
+  --accent: #ff5a36;
   --accent-text: #ffffff;
-  --border: #d5dbe7;
+  --accent-ink: #d93f1e;
+  --border: #eadfd2;
+  --g1: #ff9a3d;
+  --g2: #ff3d87;
+  --shadow: 0 4px 14px rgba(120, 60, 20, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1522;
-    --card: #171f31;
-    --text: #e8edf5;
-    --muted: #9aa6b8;
-    --accent: #5b8fe0;
-    --accent-text: #0b1220;
-    --border: #2a3550;
+    --bg: #17102a;
+    --card: #231a3d;
+    --text: #f6efff;
+    --muted: #b3a6cc;
+    --accent: #ff6b4a;
+    --accent-text: #ffffff;
+    --accent-ink: #ff8a6b;
+    --border: #3a2d5c;
+    --g1: #ff8a3d;
+    --g2: #d6336c;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   }
 }
 
@@ -24,39 +32,39 @@
 
 html, body {
   margin: 0;
-  height: 100%;
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", system-ui, sans-serif;
   user-select: none;
 }
 
-h1 { font-size: 22px; margin: 0 0 24px; text-align: center; }
+h1 { font-size: 24px; margin: 0 0 24px; text-align: center; font-weight: 800; }
 h2 {
   font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
-  color: var(--accent); margin: 28px 0 10px;
+  color: var(--accent-ink); margin: 28px 0 10px;
 }
 
-input[type="password"] {
+input[type="password"], input[type="text"] {
   width: 100%;
   padding: 14px 16px;
   font-size: 16px;
   color: var(--text);
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
   outline: none;
   user-select: text;
 }
-input[type="password"]:focus { border-color: var(--accent); }
+input[type="password"]:focus, input[type="text"]:focus { border-color: var(--accent); }
 
 button {
   font: inherit;
   cursor: pointer;
   color: var(--text);
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
   padding: 10px 16px;
 }
 button:hover { border-color: var(--accent); }
@@ -65,14 +73,16 @@ button.primary {
   margin-top: 16px;
   padding: 14px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent-text);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--g1), var(--g2));
+  border: none;
+  box-shadow: var(--shadow);
 }
+button.primary:hover { filter: brightness(1.06); }
 button.link {
   border: none;
-  color: var(--accent);
+  color: var(--accent-ink);
   padding: 6px 8px;
 }
 

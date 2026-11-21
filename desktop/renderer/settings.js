@@ -27,6 +27,19 @@ $('plus').addEventListener('click', () => change({ zoom: Number($('zoom').value)
 $('reset').addEventListener('click', () => change({ zoom: 100 }));
 $('close').addEventListener('click', () => window.close());
 
+const PALETTE = ['#ff5a36', '#ff3d87', '#8e44ec', '#2d9cdb', '#1db98a', '#f2a100'];
+const hash = (t) => { let h = 0; for (const c of t) h = (h * 31 + c.codePointAt(0)) | 0; return Math.abs(h); };
+
+function openInfo(l) {
+  $('dlgTitle').textContent = l.name;
+  $('dlgText').textContent = l.desc && l.desc.trim() ? l.desc : 'Bu site için açıklama yok.';
+  $('overlay').hidden = false;
+  $('dlgOk').focus();
+}
+$('dlgOk').addEventListener('click', () => { $('overlay').hidden = true; });
+$('overlay').addEventListener('click', (e) => { if (e.target === $('overlay')) $('overlay').hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('overlay').hidden = true; });
+
 // ---- Web siteleri: logo kutucukları (metinler/logolar textContent ve img.src ile yazılır; HTML yorumlanmaz)
 function showSites(st, note) {
   const box = $('sites');
@@ -42,25 +55,40 @@ function showSites(st, note) {
   if (!st.links.length) { setMsg('Listede site bulunamadı.'); return; }
   setMsg(note || '');
   st.links.forEach((l) => {
-    const tile = document.createElement('button');
+    const tile = document.createElement('div');
     tile.className = 'tile' + (l.url === st.selected ? ' sel' : '');
-    tile.title = l.desc ? l.name + ' — ' + l.desc : l.name; // üzerine gelince adı görünür
+    tile.setAttribute('role', 'button');
+    tile.tabIndex = 0;
     tile.setAttribute('aria-label', l.name);
-    const letter = document.createElement('span');
-    letter.textContent = (l.name.trim()[0] || '?').toUpperCase(); // logo gelene kadar baş harf
-    tile.appendChild(letter);
-    tile.addEventListener('click', async () => {
+    const logo = document.createElement('span');
+    logo.className = 'logo';
+    logo.style.background = PALETTE[hash(l.name) % PALETTE.length];
+    logo.textContent = (l.name.trim()[0] || '?').toUpperCase(); // logo gelene kadar baş harf
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = l.name;
+    const info = document.createElement('button');
+    info.className = 'info';
+    info.type = 'button';
+    info.textContent = 'i';
+    info.setAttribute('aria-label', l.name + ' hakkında');
+    info.addEventListener('click', (e) => { e.stopPropagation(); openInfo(l); });
+    tile.append(logo, name, info);
+    const pick = async () => {
       const r = await window.api.selectSite(l.url);
       if (r && !r.opened) showSites(r, 'Seçildi. Giriş yapınca bu site açılacak.');
-    });
+    };
+    tile.addEventListener('click', pick);
+    tile.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
     box.appendChild(tile);
     window.api.siteIcon(l.url).then((src) => {
       if (!src) return;
       const img = document.createElement('img');
       img.alt = '';
       img.src = src;
-      tile.textContent = '';
-      tile.appendChild(img);
+      logo.textContent = '';
+      logo.style.background = 'none';
+      logo.appendChild(img);
     });
   });
 }

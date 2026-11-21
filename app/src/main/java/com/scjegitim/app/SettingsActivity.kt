@@ -43,9 +43,6 @@ class SettingsActivity : AppCompatActivity() {
     private var firstRun = false
     private var openOnPick = false
     private var exitOnBack = false
-    private lateinit var recStatus: TextView
-    private var recCallback: android.media.AudioManager.AudioRecordingCallback? = null
-    private val uiHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     private lateinit var zoomSeek: SeekBar
     private lateinit var zoomLabel: TextView
@@ -91,11 +88,6 @@ class SettingsActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.batteryButton).setOnClickListener { openBatterySettings() }
 
-        val pauseRec = findViewById<SwitchMaterial>(R.id.switchPauseRec)
-        pauseRec.isChecked = AppSettings.pauseOnRecording(this)
-        pauseRec.setOnCheckedChangeListener { _, checked -> AppSettings.setPauseOnRecording(this, checked) }
-        recStatus = findViewById(R.id.recStatus)
-        showRecStatus(RecordingWatch.current(this))
 
         // --- Görünüm (gece / gündüz) ---
         val group = findViewById<RadioGroup>(R.id.themeGroup)
@@ -147,22 +139,6 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun showRecStatus(sources: List<Int>) {
-        recStatus.text = if (sources.isEmpty()) getString(R.string.rec_status_none)
-        else getString(R.string.rec_status_some, sources.size, sources.joinToString(","))
-    }
-
-    override fun onStart() {
-        super.onStart()
-        recCallback = RecordingWatch.register(this, uiHandler) { showRecStatus(it) }
-    }
-
-    override fun onStop() {
-        RecordingWatch.unregister(this, recCallback)
-        recCallback = null
-        super.onStop()
-    }
-
     private fun showSiteMessage(resId: Int?) {
         if (resId == null) {
             siteMessage.visibility = View.GONE
@@ -195,7 +171,13 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    /** Her site için tek bir küçük logo kutucuğu çizer. Logoya dokunmak siteyi seçer. */
+    // Harf dairesi için canlı renkler (site adından seçilir; aynı site hep aynı rengi alır)
+    private val tilePalette = intArrayOf(
+        0xFFFF5A36.toInt(), 0xFFFF3D87.toInt(), 0xFF8E44EC.toInt(), 0xFF2D9CDB.toInt(),
+        0xFF1DB98A.toInt(), 0xFFF2A100.toInt()
+    )
+
+    /** Her site için logo + altında adı olan bir kutucuk çizer. Sağ alttaki "i" açıklamayı gösterir. */
     private fun renderSites(list: List<SiteLink>) {
         siteGrid.removeAllViews()
 
@@ -210,48 +192,87 @@ class SettingsActivity : AppCompatActivity() {
         // İlk kurulumda hiçbiri hazır seçili gelmez; kullanıcı kendisi seçer
         val current = if (firstRun) Account.selectedUrl(this) else Account.siteToOpen(this)
         val textColor = resources.getColor(R.color.on_background, theme)
-        val accent = resources.getColor(R.color.accent_text, theme)
-        val tileColor = (textColor and 0x00FFFFFF) or 0x14000000 // yazı renginin %8'i: her iki temada uyumlu
-        val cols = 4
+        val muted = resources.getColor(R.color.on_background_muted, theme)
+        val surface = resources.getColor(R.color.surface, theme)
+        val primary = resources.getColor(R.color.primary, theme)
+        val outline = resources.getColor(R.color.outline, theme)
+        val cols = 3
 
         list.forEachIndexed { index, link ->
             val selected = link.url == current
             val tile = FrameLayout(this)
             tile.background = GradientDrawable().apply {
-                cornerRadius = dp(16).toFloat()
-                setColor(tileColor)
-                if (selected) setStroke(dp(2), accent)
+                cornerRadius = dp(20).toFloat()
+                setColor(surface)
+                setStroke(dp(if (selected) 3 else 1), if (selected) primary else outline)
             }
+            tile.elevation = dp(3).toFloat()
             tile.contentDescription = link.name
 
-            // Logo gelene kadar (veya hiç gelmezse) sitenin baş harfi gösterilir
+            val column = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(dp(6), dp(14), dp(6), dp(10))
+            }
+
+            // Logo gelene kadar (veya hiç gelmezse) sitenin baş harfi renkli bir daire içinde gösterilir
+            val logoBox = FrameLayout(this)
+            val circleColor = tilePalette[Math.abs(link.name.hashCode()) % tilePalette.size]
             val letter = TextView(this).apply {
                 text = link.name.trim().take(1).uppercase()
-                setTextColor(accent)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
                 gravity = Gravity.CENTER
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(circleColor) }
             }
             val icon = ImageView(this).apply {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 visibility = View.GONE
                 clipToOutline = true
                 outlineProvider = object : ViewOutlineProvider() {
-                    override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(10).toFloat()) }
+                    override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(12).toFloat()) }
                 }
             }
-            tile.addView(letter, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
-            tile.addView(icon, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
+            logoBox.addView(letter, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
+            logoBox.addView(icon, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
+            column.addView(logoBox, android.widget.LinearLayout.LayoutParams(dp(48), dp(48)))
+
+            val name = TextView(this).apply {
+                text = link.name
+                setTextColor(textColor)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+            column.addView(name, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(8) })
+            tile.addView(column, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+
+            // Sağ alt köşe: açıklama (E-Tablodaki C sütunu)
+            val info = TextView(this).apply {
+                text = "i"
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                typeface = android.graphics.Typeface.create(android.graphics.Typeface.SERIF, android.graphics.Typeface.BOLD_ITALIC)
+                gravity = Gravity.CENTER
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(muted) }
+                contentDescription = link.name
+                setOnClickListener { showSiteInfo(link) }
+            }
+            tile.addView(info, FrameLayout.LayoutParams(dp(24), dp(24), Gravity.BOTTOM or Gravity.END).apply {
+                setMargins(0, 0, dp(8), dp(8))
+            })
 
             tile.setOnClickListener { pickSite(link) }
-            tile.setOnLongClickListener {
-                Toast.makeText(this, if (link.desc.isBlank()) link.name else link.name + " — " + link.desc, Toast.LENGTH_SHORT).show()
-                true
-            }
 
             val lp = GridLayout.LayoutParams(GridLayout.spec(index / cols), GridLayout.spec(index % cols, 1f))
             lp.width = 0
-            lp.height = dp(84)
+            lp.height = dp(122)
             lp.setMargins(dp(5), dp(5), dp(5), dp(5))
             siteGrid.addView(tile, lp)
 
@@ -266,6 +287,17 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun showSiteInfo(link: SiteLink) {
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(link.name)
+            .setMessage(if (link.desc.isBlank()) getString(R.string.site_info_none) else link.desc)
+            .setPositiveButton(R.string.ok, null)
+            .create()
+        // Ekran görüntüsü engeli bu pencere için de geçerli olsun
+        dialog.window?.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        dialog.show()
     }
 
     private fun pickSite(link: SiteLink) {
