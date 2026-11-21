@@ -24,6 +24,12 @@ object AppSettings {
         prefs(c).edit().putBoolean("keep_audio", v).apply()
     }
 
+    // Reklam engelleme (bilinen reklam sunucuları + reklam alanlarını gizleme)
+    fun adBlock(c: Context): Boolean = prefs(c).getBoolean("ad_block", true)
+    fun setAdBlock(c: Context, v: Boolean) {
+        prefs(c).edit().putBoolean("ad_block", v).apply()
+    }
+
     // Başka bir uygulama ses kaydı yaparken (ekran kaydedici gibi) içeriği durdur
     fun pauseOnRecording(c: Context): Boolean = prefs(c).getBoolean("pause_on_recording", true)
     fun setPauseOnRecording(c: Context, v: Boolean) {

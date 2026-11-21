@@ -1,14 +1,22 @@
 package com.scjegitim.app
 
+import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Outline
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
+import android.view.ViewOutlineProvider
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.RadioButton
+import android.widget.FrameLayout
+import android.widget.GridLayout
+import android.widget.ImageView
 import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
@@ -20,20 +28,29 @@ import java.util.concurrent.Executors
 class SettingsActivity : AppCompatActivity() {
 
     companion object {
-        /** Kayıt sırasında ilk kez açılırken true: site seçimi + "Devam Et" düğmesi gösterilir. */
+        /** Kayıt sırasında ilk kez açılırken true: bir logoya dokunmak seçip devam ettirir. */
         const val EXTRA_FIRST_RUN = "first_run"
+
+        /** true ise bir logoya dokununca site seçilir ve bu ekran kapanır (site açılır). */
+        const val EXTRA_OPEN_ON_PICK = "open_on_pick"
+
+        /** true ise geri tuşu uygulamadan çıkış sonucu döndürür (siteden geri → Ana Sayfa → geri = çıkış). */
+        const val EXTRA_EXIT_ON_BACK = "exit_on_back"
+
+        const val RESULT_EXIT = Activity.RESULT_FIRST_USER
     }
 
     private var firstRun = false
+    private var openOnPick = false
+    private var exitOnBack = false
     private lateinit var recStatus: TextView
     private var recCallback: android.media.AudioManager.AudioRecordingCallback? = null
     private val uiHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private lateinit var continueButton: Button
 
     private lateinit var zoomSeek: SeekBar
     private lateinit var zoomLabel: TextView
     private lateinit var zoomPreview: TextView
-    private lateinit var siteGroup: RadioGroup
+    private lateinit var siteGrid: GridLayout
     private lateinit var siteMessage: TextView
     private lateinit var siteRefresh: Button
 
@@ -49,27 +66,22 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         firstRun = intent.getBooleanExtra(EXTRA_FIRST_RUN, false)
-        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+        openOnPick = firstRun || intent.getBooleanExtra(EXTRA_OPEN_ON_PICK, false)
+        exitOnBack = intent.getBooleanExtra(EXTRA_EXIT_ON_BACK, false)
+        findViewById<Button>(R.id.backButton).setOnClickListener { onBackPressed() }
 
-        continueButton = findViewById(R.id.siteContinue)
-        continueButton.visibility = if (firstRun) View.VISIBLE else View.GONE
-        continueButton.isEnabled = Account.selectedUrl(this) != null
-        continueButton.setOnClickListener {
-            if (Account.selectedUrl(this) == null) {
-                Toast.makeText(this, R.string.site_choose_first, Toast.LENGTH_SHORT).show()
-            } else {
-                setResult(RESULT_OK)
-                finish()
-            }
-        }
-
-        // --- Web sitesi seçimi ---
-        siteGroup = findViewById(R.id.siteGroup)
+        // --- Web siteleri (logo kutucukları) ---
+        siteGrid = findViewById(R.id.siteGrid)
         siteMessage = findViewById(R.id.siteMessage)
         siteRefresh = findViewById(R.id.siteRefresh)
         siteRefresh.setOnClickListener { refreshSites() }
         renderSites(Account.cachedLinks(this))
         if (Account.identity(this) != null) refreshSites()
+
+        // --- Reklam engelleme ---
+        val adBlock = findViewById<SwitchMaterial>(R.id.switchAdBlock)
+        adBlock.isChecked = AppSettings.adBlock(this)
+        adBlock.setOnCheckedChangeListener { _, checked -> AppSettings.setAdBlock(this, checked) }
 
         // --- Ses ---
         val keepAudio = findViewById<SwitchMaterial>(R.id.switchKeepAudio)
@@ -181,9 +193,11 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    /** Her site için tek bir küçük logo kutucuğu çizer. Logoya dokunmak siteyi seçer. */
     private fun renderSites(list: List<SiteLink>) {
-        siteGroup.setOnCheckedChangeListener(null)
-        siteGroup.removeAllViews()
+        siteGrid.removeAllViews()
 
         if (Account.identity(this) == null) {
             siteRefresh.visibility = View.GONE
@@ -195,23 +209,82 @@ class SettingsActivity : AppCompatActivity() {
 
         // İlk kurulumda hiçbiri hazır seçili gelmez; kullanıcı kendisi seçer
         val current = if (firstRun) Account.selectedUrl(this) else Account.siteToOpen(this)
-        val byId = HashMap<Int, String>()
-        for (link in list) {
-            val rb = RadioButton(this)
-            rb.id = View.generateViewId()
-            rb.text = if (link.desc.isBlank()) link.name else link.name + "\n" + link.desc
-            rb.setTextColor(resources.getColor(R.color.on_background, theme))
-            rb.textSize = 16f
-            rb.setPadding(rb.paddingLeft, 12, rb.paddingRight, 12)
-            siteGroup.addView(rb, RadioGroup.LayoutParams(RadioGroup.LayoutParams.MATCH_PARENT, RadioGroup.LayoutParams.WRAP_CONTENT))
-            byId[rb.id] = link.url
-            if (link.url == current) rb.isChecked = true
+        val textColor = resources.getColor(R.color.on_background, theme)
+        val accent = resources.getColor(R.color.accent_text, theme)
+        val tileColor = (textColor and 0x00FFFFFF) or 0x14000000 // yazı renginin %8'i: her iki temada uyumlu
+        val cols = 4
+
+        list.forEachIndexed { index, link ->
+            val selected = link.url == current
+            val tile = FrameLayout(this)
+            tile.background = GradientDrawable().apply {
+                cornerRadius = dp(16).toFloat()
+                setColor(tileColor)
+                if (selected) setStroke(dp(2), accent)
+            }
+            tile.contentDescription = link.name
+
+            // Logo gelene kadar (veya hiç gelmezse) sitenin baş harfi gösterilir
+            val letter = TextView(this).apply {
+                text = link.name.trim().take(1).uppercase()
+                setTextColor(accent)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+            }
+            val icon = ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                visibility = View.GONE
+                clipToOutline = true
+                outlineProvider = object : ViewOutlineProvider() {
+                    override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(10).toFloat()) }
+                }
+            }
+            tile.addView(letter, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            tile.addView(icon, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
+
+            tile.setOnClickListener { pickSite(link) }
+            tile.setOnLongClickListener {
+                Toast.makeText(this, if (link.desc.isBlank()) link.name else link.name + " — " + link.desc, Toast.LENGTH_SHORT).show()
+                true
+            }
+
+            val lp = GridLayout.LayoutParams(GridLayout.spec(index / cols), GridLayout.spec(index % cols, 1f))
+            lp.width = 0
+            lp.height = dp(84)
+            lp.setMargins(dp(5), dp(5), dp(5), dp(5))
+            siteGrid.addView(tile, lp)
+
+            val app = applicationContext
+            worker.execute {
+                val bmp = Favicons.load(app, link.url)
+                if (bmp != null) runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    icon.setImageBitmap(bmp)
+                    icon.visibility = View.VISIBLE
+                    letter.visibility = View.GONE
+                }
+            }
         }
-        siteGroup.setOnCheckedChangeListener { _, id ->
-            val url = byId[id] ?: return@setOnCheckedChangeListener
-            Account.setSelectedUrl(this, url)
-            continueButton.isEnabled = true
+    }
+
+    private fun pickSite(link: SiteLink) {
+        Account.setSelectedUrl(this, link.url)
+        if (openOnPick) {
+            setResult(RESULT_OK) // Ana ekran siteyi açar
+            finish()
+        } else {
             Toast.makeText(this, R.string.site_saved, Toast.LENGTH_SHORT).show()
+            renderSites(Account.cachedLinks(this))
+        }
+    }
+
+    override fun onBackPressed() {
+        if (exitOnBack) {
+            setResult(RESULT_EXIT) // siteden geri ile gelindi: bir daha geri = uygulamadan çık
+            finish()
+        } else {
+            super.onBackPressed()
         }
     }
 

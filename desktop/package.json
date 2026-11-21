@@ -26,6 +26,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "adblock.js",
       "renderer/**",
       "build/icon.png"
     ],

@@ -15,6 +15,8 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -30,6 +32,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
+import java.io.ByteArrayInputStream
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.ExecutorService
@@ -75,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private var recResumeUrl: String? = null
     private val recResume = Runnable { resumeAfterRecording() }
 
+    @Volatile private var adBlockOn = true
     private var googleLoaded = false
     private val googlePoll = object : Runnable {
         override fun run() {
@@ -83,11 +87,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // İlk ayarlar ekranı (site seçimi). "Devam Et" ile dönülürse site açılır.
-    private val firstSettings = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode == RESULT_OK && step == Step.SITE) {
-            Account.setSiteDone(this)
-            openSite(null, logLogin = false)
+    // Ana Sayfa ekranı (site logoları). Logoya dokunulursa RESULT_OK; siteden geri ile gelinip
+    // bir daha geri denirse RESULT_EXIT döner ve uygulama kapanır.
+    private val homeLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        when {
+            r.resultCode == RESULT_OK && step == Step.SITE -> {
+                Account.setSiteDone(this)
+                openSite(null, logLogin = false)
+            }
+            r.resultCode == SettingsActivity.RESULT_EXIT -> finish()
+            // RESULT_OK ile dönüldüyse yeni site seçilmiştir: onResume bunu fark edip yükler
         }
     }
 
@@ -382,7 +391,7 @@ class MainActivity : AppCompatActivity() {
 
     // 3b) İlk ayarlar: site seçilip "Devam Et" denir
     private fun openFirstSettings() {
-        firstSettings.launch(
+        homeLauncher.launch(
             Intent(this, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_FIRST_RUN, true)
         )
     }
@@ -588,9 +597,20 @@ class MainActivity : AppCompatActivity() {
 
         // Bağlantılar uygulama içinde açılsın (dış tarayıcıya atmasın)
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                // Bilinen reklam sunucularına giden istekleri boş yanıtla geçiştir
+                if (adBlockOn && request != null && AdBlock.isBlocked(request.url?.host)) {
+                    return WebResourceResponse("text/plain", "UTF-8", 204, "No Content", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+                }
+                return super.shouldInterceptRequest(view, request)
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                if (url != null && url != "about:blank") lastUrl = url
+                if (url != null && url != "about:blank") {
+                    lastUrl = url
+                    if (adBlockOn) view?.evaluateJavascript(AdBlock.COSMETIC_JS, null)
+                }
             }
         }
         webView.webChromeClient = WebChromeClient()
@@ -604,6 +624,12 @@ class MainActivity : AppCompatActivity() {
     private fun applySettings() {
         webView.settings.textZoom = AppSettings.textZoom(this)
         webView.keepBackground = AppSettings.keepAudio(this)
+        val ab = AppSettings.adBlock(this)
+        if (ab != adBlockOn) {
+            adBlockOn = ab
+            val cur = webView.url
+            if (unlocked && !recPaused && cur != null && cur != "about:blank") webView.reload() // açık sayfaya yeni ayar uygulansın
+        }
         applyWebDarkMode()
     }
 
@@ -646,8 +672,12 @@ class MainActivity : AppCompatActivity() {
 
     // ---------------- Menü ve ayarlar ----------------
 
-    private fun openSettings() {
-        startActivity(Intent(this, SettingsActivity::class.java))
+    /** Kilit ekranındaki Ayarlar düğmesi / yüzen düğmedeki Ana Sayfa. */
+    private fun openSettings(exitOnBack: Boolean = false) {
+        val i = Intent(this, SettingsActivity::class.java)
+            .putExtra(SettingsActivity.EXTRA_OPEN_ON_PICK, unlocked)
+            .putExtra(SettingsActivity.EXTRA_EXIT_ON_BACK, exitOnBack)
+        homeLauncher.launch(i)
     }
 
     // ---------------- Yüzen düğme (AssistiveTouch) ----------------
@@ -820,6 +850,8 @@ class MainActivity : AppCompatActivity() {
             blackMode -> exitBlackMode()
             step == Step.GOOGLE && !unlocked && googleWebView.canGoBack() -> googleWebView.goBack()
             unlocked && webView.canGoBack() -> webView.goBack()
+            // Sitede geri gidecek yer kalmadı: uygulamayı kapatmak yerine Ana Sayfa açılır
+            unlocked -> openSettings(exitOnBack = true)
             else -> super.onBackPressed()
         }
     }

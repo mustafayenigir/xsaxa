@@ -35,6 +35,37 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- WEB SİTELERİ: logo kutucukları -->
+        <TextView
+            style="@style/SettingsHint"
+            android:layout_marginTop="12dp"
+            android:text="@string/site_hint" />
+
+        <GridLayout
+            android:id="@+id/siteGrid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:columnCount="4" />
+
+        <TextView
+            android:id="@+id/siteMessage"
+            style="@style/SettingsHint"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/siteRefresh"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:text="@string/site_refresh" />
+
+        <!-- AYARLAR -->
+        <TextView
+            style="@style/SettingsSection"
+            android:text="@string/section_settings" />
+
         <!-- SES -->
         <TextView
             style="@style/SettingsSection"
@@ -64,44 +95,6 @@
             style="@style/SettingsHint"
             android:text="@string/battery_hint" />
 
-        <!-- WEB SİTESİ -->
-        <TextView
-            style="@style/SettingsSection"
-            android:text="@string/section_site" />
-
-        <TextView
-            style="@style/SettingsHint"
-            android:text="@string/site_hint" />
-
-        <RadioGroup
-            android:id="@+id/siteGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="vertical" />
-
-        <TextView
-            android:id="@+id/siteMessage"
-            style="@style/SettingsHint"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/siteContinue"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:enabled="false"
-            android:text="@string/site_continue"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/siteRefresh"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/site_refresh" />
-
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchPauseRec"
             android:layout_width="match_parent"
@@ -119,6 +112,23 @@
             android:id="@+id/recStatus"
             style="@style/SettingsHint"
             android:textStyle="bold" />
+
+        <!-- REKLAM ENGELLEME -->
+        <TextView
+            style="@style/SettingsSection"
+            android:text="@string/section_ads" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchAdBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ad_block_title"
+            android:textColor="@color/on_background"
+            android:textSize="16sp" />
+
+        <TextView
+            style="@style/SettingsHint"
+            android:text="@string/ad_block_desc" />
 
         <!-- GÖRÜNÜM -->
         <TextView
