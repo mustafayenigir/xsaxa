@@ -1,5 +1,7 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
+window.api.getSettings().then((s) => s && applyPalette(s.palette));
+window.api.onSettingsUpdated((s) => s && applyPalette(s.palette));
 let step = 'enter';
 let busy = false;
 let signedIn = false;

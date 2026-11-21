@@ -26,7 +26,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 // ---------------------------------------------------------------- ayarlar
 const DEFAULTS = {
-  keepAudio: true, adBlock: true, theme: 'system', zoom: 100, pwdHash: null, pwdSalt: null,
+  keepAudio: true, adBlock: true, theme: 'system', palette: 0, zoom: 100, pwdHash: null, pwdSalt: null,
   // kayıt / yoklama
   pendingNo: null, no: null, uuid: null, token: null, googleDone: false, siteDone: false,
   siteUrl: null, links: [], pendingSeconds: 0,
@@ -55,6 +55,7 @@ function publicSettings() {
     keepAudio: settings.keepAudio,
     adBlock: settings.adBlock !== false,
     theme: settings.theme,
+    palette: Number.isInteger(settings.palette) ? settings.palette : 0,
     zoom: settings.zoom,
     zoomMin: ZOOM_MIN,
     zoomMax: ZOOM_MAX,
@@ -702,11 +703,17 @@ ipcMain.handle('settings:set', (e, patch) => {
   const adBefore = settings.adBlock !== false;
   if (typeof patch.adBlock === 'boolean') settings.adBlock = patch.adBlock;
   if (THEMES.includes(patch.theme)) settings.theme = patch.theme;
+  const palBefore = settings.palette;
+  if (Number.isInteger(patch.palette) && patch.palette >= 0 && patch.palette <= 9) settings.palette = patch.palette;
   if (Number.isFinite(patch.zoom)) {
     settings.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(patch.zoom / 10) * 10));
   }
   saveSettings();
   applyAll();
+  // Renk teması değiştiyse kilit ekranı gibi yerel sayfalar da anında yeni renkleri alsın
+  if (palBefore !== settings.palette && win && !win.isDestroyed() && win.webContents.getURL().startsWith('file:')) {
+    win.webContents.send('settings:updated', publicSettings());
+  }
   // Reklam ayarı değiştiyse açık sayfayı yenile ki istekler yeni ayara göre yüklensin
   if (unlocked && win && adBefore !== (settings.adBlock !== false)) win.webContents.reload();
   return publicSettings();

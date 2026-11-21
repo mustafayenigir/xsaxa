@@ -33,3 +33,12 @@
     .dialog p { margin: 0 0 16px; line-height: 1.5; font-size: 15px; user-select: text; white-space: pre-wrap; }
     .dialog button { width: 100%; }
 .dialog button.primary { margin-top: 0; }
+
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 10px; }
+.pal { display: block; text-align: left; padding: 10px; border-radius: 18px; background: var(--card); border: 1.5px solid var(--border); box-shadow: var(--shadow); cursor: pointer; }
+.pal:hover { border-color: var(--accent); }
+.pal.sel { border: 3px solid var(--accent); padding: 8.5px; }
+.pal .sw { display: flex; align-items: center; justify-content: center; height: 46px; border-radius: 12px; color: #fff; font-size: 20px; font-weight: 700; }
+.pal .pn { display: block; margin-top: 8px; font-weight: 700; font-size: 15px; }
+.pal .pt { display: block; font-size: 12px; color: var(--muted); }
+.paldesc { margin: 12px 0 0; font-size: 14px; line-height: 1.45; }

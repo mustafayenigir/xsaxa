@@ -1,8 +1,35 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 
+function renderPalettes(cur) {
+  const box = $('palettes');
+  if (!box.childElementCount) {
+    PALETTES.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pal';
+      b.setAttribute('aria-label', p.name + ', ' + p.type);
+      const sw = document.createElement('span'); sw.className = 'sw';
+      sw.style.background = 'linear-gradient(135deg, ' + p.start + ', ' + p.end + ')';
+      const n = document.createElement('span'); n.className = 'pn'; n.textContent = p.name;
+      const t = document.createElement('span'); t.className = 'pt'; t.textContent = p.type;
+      b.append(sw, n, t);
+      b.addEventListener('click', () => change({ palette: i }));
+      box.appendChild(b);
+    });
+  }
+  [...box.children].forEach((b, i) => {
+    b.classList.toggle('sel', i === cur);
+    b.firstChild.textContent = i === cur ? '✓' : '';
+  });
+  const p = PALETTES[cur] || PALETTES[0];
+  $('palDesc').textContent = p.name + ' (' + p.type + '): ' + p.desc;
+}
+
 function show(s) {
   if (!s) return;
+  applyPalette(s.palette);
+  renderPalettes(Number.isInteger(s.palette) ? s.palette : 0);
   $('keepAudio').checked = s.keepAudio;
   $('adBlock').checked = s.adBlock;
   document.querySelectorAll('input[name="theme"]').forEach((r) => { r.checked = r.value === s.theme; });

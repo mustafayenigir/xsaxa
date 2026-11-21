@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settingsScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="?attr/cBackground"
     android:fillViewport="true">
 
     <LinearLayout
@@ -79,6 +80,34 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:text="@string/site_refresh" />
+
+        <!-- TEMANI SEÇ -->
+        <TextView
+            style="@style/SettingsSection"
+            android:text="@string/section_palette" />
+
+        <TextView
+            style="@style/SettingsHint"
+            android:text="@string/palette_hint" />
+
+        <GridLayout
+            android:id="@+id/paletteGrid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:columnCount="2" />
+
+        <TextView
+            android:id="@+id/paletteDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/on_background"
+            android:textSize="14sp" />
+
+        <TextView
+            style="@style/SettingsHint"
+            android:text="@string/palette_note" />
 
         <!-- AYARLAR -->
         <TextView

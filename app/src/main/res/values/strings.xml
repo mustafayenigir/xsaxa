@@ -52,6 +52,9 @@
     <string name="site_hint">Açmak istediğiniz sitenin logosuna dokunun. Sağ alttaki ⓘ simgesi siteyi anlatır.</string>
     <string name="home_greeting">Merhaba! Bugün hangi siteye göz atalım? 👋</string>
     <string name="site_info_none">Bu site için açıklama yok.</string>
+    <string name="section_palette">Temanı seç</string>
+    <string name="palette_hint">Sana en yakın hissettiren rengi seç; uygulama senin renklerinde olsun.</string>
+    <string name="palette_note">Enneagram\'dan esinlenen eğlenceli renk temalarıdır; bir kişilik testi değildir.</string>
     <string name="ok">Tamam</string>
     <string name="site_refresh">Listeyi yenile</string>
     <string name="site_loading">Liste yenileniyor…</string>

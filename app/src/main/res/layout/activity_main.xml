@@ -36,6 +36,7 @@
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/lockCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_card"
@@ -121,7 +122,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:gravity="center"
-                android:textColor="@color/accent_text"
+                android:textColor="?attr/cAccentText"
                 android:textSize="14sp"
                 android:textStyle="bold" />
             </LinearLayout>
@@ -133,7 +134,7 @@
         android:id="@+id/googleContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/background"
+        android:background="?attr/cBackground"
         android:orientation="vertical"
         android:padding="16dp"
         android:visibility="gone">

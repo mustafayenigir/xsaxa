@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity() {
     // Ana Sayfa ekranı (site logoları). Logoya dokunulursa RESULT_OK; siteden geri ile gelinip
     // bir daha geri denirse RESULT_EXIT döner ve uygulama kapanır.
     private val homeLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        refreshPalette() // Ana Sayfa'da tema değiştiyse kilit ekranı renklerini güncelle
         when {
             r.resultCode == RESULT_OK && step == Step.SITE -> {
                 Account.setSiteDone(this)
@@ -134,8 +135,30 @@ class MainActivity : AppCompatActivity() {
 
     private var unlocked = false
     private var blackMode = false
+    private var appliedPalette = 0
+
+    /** Seçilen renk teması değiştiyse kilit ekranındaki renkleri yeniler (yeniden başlatmadan). */
+    private fun refreshPalette() {
+        val idx = Palettes.index(this)
+        if (idx == appliedPalette) return
+        appliedPalette = idx
+        Palettes.apply(this)
+        lockContainer.setBackgroundResource(R.drawable.bg_lock)
+        findViewById<View>(R.id.lockCard).setBackgroundResource(R.drawable.bg_card)
+        for (id in intArrayOf(R.id.noInput, R.id.passwordInput, R.id.passwordConfirm)) {
+            findViewById<View>(id).setBackgroundResource(R.drawable.bg_input)
+        }
+        googleContainer.setBackgroundColor(Palettes.color(this, R.attr.cBackground))
+        lockMessage.setTextColor(Palettes.color(this, R.attr.cAccentText))
+        val tint = android.content.res.ColorStateList.valueOf(Palettes.color(this, R.attr.cPrimary))
+        unlockButton.backgroundTintList = tint
+        findViewById<Button>(R.id.googleContinue).backgroundTintList = tint
+        window.statusBarColor = Palettes.color(this, R.attr.cGradEnd)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Palettes.apply(this)
+        appliedPalette = Palettes.index(this)
         super.onCreate(savedInstanceState)
 
         MeyvemApp.blockAudioCapture(this)

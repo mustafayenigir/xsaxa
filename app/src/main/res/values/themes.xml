@@ -5,6 +5,13 @@
         <item name="android:statusBarColor">@color/primary_dark</item>
         <item name="android:windowBackground">@color/background</item>
         <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="cBackground">@color/background</item>
+        <item name="cSurface">@color/surface</item>
+        <item name="cAccentText">@color/accent_text</item>
+        <item name="cGradStart">@color/gradient_start</item>
+        <item name="cGradEnd">@color/gradient_end</item>
+        <item name="cOutline">@color/outline</item>
+        <item name="cPrimary">@color/primary</item>
         <item name="materialButtonStyle">@style/Meyvem.Button</item>
     </style>
 
@@ -21,7 +28,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginTop">28dp</item>
         <item name="android:layout_marginBottom">8dp</item>
-        <item name="android:textColor">@color/accent_text</item>
+        <item name="android:textColor">?attr/cAccentText</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">true</item>

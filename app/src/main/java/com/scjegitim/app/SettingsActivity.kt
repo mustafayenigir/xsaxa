@@ -52,6 +52,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var siteRefresh: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Palettes.apply(this)
         super.onCreate(savedInstanceState)
 
         // Ayarlar ekranında da ekran görüntüsü engeli geçerli
@@ -74,6 +75,9 @@ class SettingsActivity : AppCompatActivity() {
         siteRefresh.setOnClickListener { refreshSites() }
         renderSites(Account.cachedLinks(this))
         if (Account.identity(this) != null) refreshSites()
+
+        // --- Tema (renk paleti) ---
+        renderPalettes()
 
         // --- Reklam engelleme ---
         val adBlock = findViewById<SwitchMaterial>(R.id.switchAdBlock)
@@ -193,9 +197,9 @@ class SettingsActivity : AppCompatActivity() {
         val current = if (firstRun) Account.selectedUrl(this) else Account.siteToOpen(this)
         val textColor = resources.getColor(R.color.on_background, theme)
         val muted = resources.getColor(R.color.on_background_muted, theme)
-        val surface = resources.getColor(R.color.surface, theme)
-        val primary = resources.getColor(R.color.primary, theme)
-        val outline = resources.getColor(R.color.outline, theme)
+        val surface = Palettes.color(this, R.attr.cSurface)
+        val primary = Palettes.color(this, R.attr.cPrimary)
+        val outline = Palettes.color(this, R.attr.cOutline)
         val cols = 3
 
         list.forEachIndexed { index, link ->
@@ -287,6 +291,74 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** Kişilik temaları: iki sütunlu renkli kartlar; birine dokununca tema hemen uygulanır. */
+    private fun renderPalettes() {
+        val grid = findViewById<GridLayout>(R.id.paletteGrid)
+        val desc = findViewById<TextView>(R.id.paletteDesc)
+        grid.removeAllViews()
+        val current = Palettes.index(this)
+        val surface = Palettes.color(this, R.attr.cSurface)
+        val primary = Palettes.color(this, R.attr.cPrimary)
+        val outline = Palettes.color(this, R.attr.cOutline)
+        val textColor = resources.getColor(R.color.on_background, theme)
+        val muted = resources.getColor(R.color.on_background_muted, theme)
+
+        Palettes.all.forEachIndexed { index, pal ->
+            val card = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(dp(10), dp(10), dp(10), dp(10))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(18).toFloat()
+                    setColor(surface)
+                    setStroke(dp(if (index == current) 3 else 1), if (index == current) primary else outline)
+                }
+                elevation = dp(2).toFloat()
+                contentDescription = pal.name + ", " + pal.type
+            }
+            val swatch = TextView(this).apply {
+                text = if (index == current) "✓" else ""
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                background = GradientDrawable(
+                    GradientDrawable.Orientation.TL_BR, intArrayOf(pal.start, pal.end)
+                ).apply { cornerRadius = dp(12).toFloat() }
+            }
+            card.addView(swatch, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, dp(46)))
+            val title = TextView(this).apply {
+                text = pal.name
+                setTextColor(textColor)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            card.addView(title, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(8) })
+            val sub = TextView(this).apply {
+                text = pal.type
+                setTextColor(muted)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            }
+            card.addView(sub)
+
+            card.setOnClickListener {
+                if (index != AppSettings.palette(this)) {
+                    AppSettings.setPalette(this, index)
+                    recreate() // yeni renklerle yeniden çiz
+                }
+            }
+            val lp = GridLayout.LayoutParams(GridLayout.spec(index / 2), GridLayout.spec(index % 2, 1f))
+            lp.width = 0
+            lp.setMargins(dp(5), dp(5), dp(5), dp(5))
+            grid.addView(card, lp)
+        }
+        val sel = Palettes.all[current]
+        desc.text = sel.name + " (" + sel.type + "): " + sel.desc
     }
 
     private fun showSiteInfo(link: SiteLink) {

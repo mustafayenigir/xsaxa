@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Palette1">
+        <item name="cBackground">#0E1A2C</item>
+        <item name="cSurface">#17283F</item>
+        <item name="cAccentText">#7DB8F5</item>
+        <item name="cGradStart">#1B4F9C</item>
+        <item name="cGradEnd">#0F2A5C</item>
+        <item name="cOutline">#26405F</item>
+        <item name="cPrimary">#2379D6</item>
+        <item name="colorPrimary">#2379D6</item>
+        <item name="android:statusBarColor">#0F2A5C</item>
+        <item name="android:windowBackground">#0E1A2C</item>
+    </style>
+    <style name="Palette2">
+        <item name="cBackground">#24101A</item>
+        <item name="cSurface">#36192A</item>
+        <item name="cAccentText">#FF8FB1</item>
+        <item name="cGradStart">#A02455</item>
+        <item name="cGradEnd">#5C1233</item>
+        <item name="cOutline">#5A2A42</item>
+        <item name="cPrimary">#E8457C</item>
+        <item name="colorPrimary">#E8457C</item>
+        <item name="android:statusBarColor">#5C1233</item>
+        <item name="android:windowBackground">#24101A</item>
+    </style>
+    <style name="Palette3">
+        <item name="cBackground">#21170A</item>
+        <item name="cSurface">#33230E</item>
+        <item name="cAccentText">#FFB84D</item>
+        <item name="cGradStart">#A86100</item>
+        <item name="cGradEnd">#7A2E05</item>
+        <item name="cOutline">#55391A</item>
+        <item name="cPrimary">#F08A00</item>
+        <item name="colorPrimary">#F08A00</item>
+        <item name="android:statusBarColor">#7A2E05</item>
+        <item name="android:windowBackground">#21170A</item>
+    </style>
+    <style name="Palette4">
+        <item name="cBackground">#150E26</item>
+        <item name="cSurface">#221838</item>
+        <item name="cAccentText">#C7A0FF</item>
+        <item name="cGradStart">#5B2DB8</item>
+        <item name="cGradEnd">#2E1670</item>
+        <item name="cOutline">#3A2C60</item>
+        <item name="cPrimary">#7C3FD6</item>
+        <item name="colorPrimary">#7C3FD6</item>
+        <item name="android:statusBarColor">#2E1670</item>
+        <item name="android:windowBackground">#150E26</item>
+    </style>
+    <style name="Palette5">
+        <item name="cBackground">#0A1B1A</item>
+        <item name="cSurface">#112B29</item>
+        <item name="cAccentText">#5FD3B0</item>
+        <item name="cGradStart">#0B6B55</item>
+        <item name="cGradEnd">#073B45</item>
+        <item name="cOutline">#1D4540</item>
+        <item name="cPrimary">#12876F</item>
+        <item name="colorPrimary">#12876F</item>
+        <item name="android:statusBarColor">#073B45</item>
+        <item name="android:windowBackground">#0A1B1A</item>
+    </style>
+    <style name="Palette6">
+        <item name="cBackground">#0E1226</item>
+        <item name="cSurface">#181E3E</item>
+        <item name="cAccentText">#94A6F5</item>
+        <item name="cGradStart">#2E3FA0</item>
+        <item name="cGradEnd">#141B54</item>
+        <item name="cOutline">#2A3366</item>
+        <item name="cPrimary">#3B55C9</item>
+        <item name="colorPrimary">#3B55C9</item>
+        <item name="android:statusBarColor">#141B54</item>
+        <item name="android:windowBackground">#0E1226</item>
+    </style>
+    <style name="Palette7">
+        <item name="cBackground">#0E1C12</item>
+        <item name="cSurface">#15301F</item>
+        <item name="cAccentText">#8EE07A</item>
+        <item name="cGradStart">#2E7D32</item>
+        <item name="cGradEnd">#0A5C54</item>
+        <item name="cOutline">#244A33</item>
+        <item name="cPrimary">#21A868</item>
+        <item name="colorPrimary">#21A868</item>
+        <item name="android:statusBarColor">#0A5C54</item>
+        <item name="android:windowBackground">#0E1C12</item>
+    </style>
+    <style name="Palette8">
+        <item name="cBackground">#1E0D0F</item>
+        <item name="cSurface">#331619</item>
+        <item name="cAccentText">#FF7A70</item>
+        <item name="cGradStart">#9C1B2B</item>
+        <item name="cGradEnd">#4D0A17</item>
+        <item name="cOutline">#55262B</item>
+        <item name="cPrimary">#D8283A</item>
+        <item name="colorPrimary">#D8283A</item>
+        <item name="android:statusBarColor">#4D0A17</item>
+        <item name="android:windowBackground">#1E0D0F</item>
+    </style>
+    <style name="Palette9">
+        <item name="cBackground">#0D1B1D</item>
+        <item name="cSurface">#14292C</item>
+        <item name="cAccentText">#7FD6D0</item>
+        <item name="cGradStart">#2A7F8C</item>
+        <item name="cGradEnd">#24508A</item>
+        <item name="cOutline">#224247</item>
+        <item name="cPrimary">#3FA0AE</item>
+        <item name="colorPrimary">#3FA0AE</item>
+        <item name="android:statusBarColor">#24508A</item>
+        <item name="android:windowBackground">#0D1B1D</item>
+    </style>
+</resources>

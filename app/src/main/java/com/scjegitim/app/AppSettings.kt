@@ -36,6 +36,12 @@ object AppSettings {
         prefs(c).edit().putInt("theme_mode", v).apply()
     }
 
+    // Renk teması (0 = Meyvem klasik, 1..9 = kişilik temaları)
+    fun palette(c: Context): Int = prefs(c).getInt("palette", 0)
+    fun setPalette(c: Context, v: Int) {
+        prefs(c).edit().putInt("palette", v).apply()
+    }
+
     // Site yazı boyutu (yüzde)
     fun textZoom(c: Context): Int = prefs(c).getInt("text_zoom", ZOOM_DEFAULT)
     fun setTextZoom(c: Context, v: Int) {
