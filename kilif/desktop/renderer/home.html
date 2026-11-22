@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>Ana Sayfa</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <div class="hero">
+    <p class="brand">KILIF</p>
+    <h1>Ana Sayfa</h1>
+    <p>Merhaba! Bugün nereye göz atalım? 👋</p>
+  </div>
+  <div class="content">
+
+  <h2>Sitelerim</h2>
+  <p class="hint">Açmak için logoya tıkla. Sağ alttaki ⓘ ile açıklamayı gör, düzenle ya da sil.</p>
+  <div id="sites" class="grid"></div>
+  <p class="empty" id="empty" hidden>Henüz site eklemedin.
+Aşağıdaki düğmeyle ilk siteni ekle.</p>
+  <button class="primary" id="addSite">+ Site ekle</button>
+
+  <h2>Tema</h2>
+  <div id="palettes" class="pgrid"></div>
+
+  <h2>Ayarlar</h2>
+
+  <h2>Ses</h2>
+  <label class="opt"><input type="checkbox" id="keepAudio"> Ekran kapanınca / pencere küçülünce sesi sürdür</label>
+  <p class="hint">Açıkken bilgisayar uyku moduna geçmez ve sitedeki ses/video çalmaya devam eder. Ekranı kapatsanız bile ses gelir.</p>
+
+  <h2>Reklam engelleme</h2>
+  <label class="opt"><input type="checkbox" id="adBlock"> Reklamları engelle</label>
+  <p class="hint">Bilinen reklam sunucularını engeller ve reklam alanlarını gizler.</p>
+
+  <h2>Görünüm</h2>
+  <label class="opt"><input type="radio" name="theme" value="system"> Sistemle aynı</label>
+  <label class="opt"><input type="radio" name="theme" value="light"> Gündüz modu</label>
+  <label class="opt"><input type="radio" name="theme" value="dark"> Gece modu</label>
+
+  <h2>Yazı boyutu</h2>
+  <div class="zoomrow">
+    <button id="minus">A−</button>
+    <input type="range" id="zoom" min="50" max="200" step="10">
+    <button id="plus">A+</button>
+  </div>
+  <div class="zoomlabel" id="zoomLabel">%100</div>
+  <button class="link" id="reset">Varsayılan</button>
+
+  <div class="bottom"><button class="primary" id="close">Kapat</button></div>
+  </div>
+
+  <!-- Site bilgisi: açıklama + düzenle / sil -->
+  <div class="overlay" id="infoBox" hidden>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <h3 id="infoTitle"></h3>
+      <p id="infoText"></p>
+      <p class="host" id="infoHost"></p>
+      <div class="row">
+        <button class="danger" id="infoDelete">Sil</button>
+        <button id="infoEdit">Düzenle</button>
+        <button class="primary" id="infoOk">Tamam</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Site ekle / düzenle -->
+  <div class="overlay" id="formBox" hidden>
+    <form class="dialog" id="siteForm" role="dialog" aria-modal="true" novalidate>
+      <h3 id="formTitle">Site ekle</h3>
+      <label for="fName">Site adı</label>
+      <input type="text" id="fName" maxlength="40" placeholder="ör. Haberler">
+      <label for="fUrl">Adres</label>
+      <input type="text" id="fUrl" maxlength="500" placeholder="ör. ornek.com" spellcheck="false">
+      <label for="fDesc">Açıklama (isteğe bağlı)</label>
+      <textarea id="fDesc" maxlength="300"></textarea>
+      <p class="err" id="fErr"></p>
+      <div class="row">
+        <button type="button" id="formCancel">Vazgeç</button>
+        <button type="submit" class="primary">Kaydet</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Silme onayı -->
+  <div class="overlay" id="delBox" hidden>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <p id="delText"></p>
+      <div class="row">
+        <button id="delCancel">Vazgeç</button>
+        <button class="danger" id="delOk">Sil</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="palette.js"></script>
+  <script src="home.js"></script>
+</body>
+</html>

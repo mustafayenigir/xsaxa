@@ -2,3 +2,10 @@
 # Windows uygulaması
 desktop/node_modules/
 desktop/dist/
+
+# Kılıf
+kilif/desktop/node_modules/
+kilif/desktop/dist/
+kilif/app/build/
+kilif/.gradle/
+kilif/build/

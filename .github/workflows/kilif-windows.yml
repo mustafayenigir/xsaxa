@@ -1,0 +1,62 @@
+name: Kilif Windows Derle
+
+# Sadece kilif/desktop/ degisince (veya elle) calisir.
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'kilif/desktop/**'
+      - '.github/workflows/kilif-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: kilif/desktop
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Node 20 kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bagimliliklari kur
+        run: npm install --no-audit --no-fund
+
+      - name: Kilif.exe derle (tasinabilir)
+        run: npx electron-builder --win portable --publish never
+
+      - name: exe'yi yukle (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kilif-windows
+          path: kilif/desktop/dist/Kilif.exe
+          if-no-files-found: error
+
+      # Sabit indirme baglantisi: https://github.com/<kullanici>/<depo>/releases/download/kilif-windows/Kilif.exe
+      # Surum silinip yeniden olusturulmaz; dosya yerinde degistirilir (taslakta kalma / 404 riski olmasin).
+      - name: Release olarak yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          if gh release view kilif-windows >/dev/null 2>&1; then
+            gh release upload kilif-windows dist/Kilif.exe --clobber
+          else
+            gh release create kilif-windows dist/Kilif.exe --title "Kilif Windows (son surum)" --notes "Otomatik derleme" --target "${GITHUB_SHA}" --latest=false
+          fi
+          gh release edit kilif-windows --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}" --latest=false
+          # Baglanti gercekten calisiyor mu? (en cok ~1 dk dene)
+          for i in 1 2 3 4 5 6; do
+            if curl -sfL -r 0-0 -o /dev/null "https://github.com/${GITHUB_REPOSITORY}/releases/download/kilif-windows/Kilif.exe"; then echo "Baglanti hazir"; exit 0; fi
+            sleep 10
+          done
+          echo "Indirme baglantisi calismiyor"; exit 1

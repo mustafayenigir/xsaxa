@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">Kılıf</string>
+
+    <!-- Ana Sayfa: sitelerim -->
+    <string name="settings_title">Ana Sayfa</string>
+    <string name="home_greeting">Merhaba! Bugün nereye göz atalım? 👋</string>
+    <string name="section_sites">Sitelerim</string>
+    <string name="site_hint">Açmak için logoya dokun. Sağ alttaki ⓘ ile açıklamayı gör, düzenle ya da sil.</string>
+    <string name="site_empty">Henüz site eklemedin.\nAşağıdaki düğmeyle ilk siteni ekle.</string>
+    <string name="site_add">+ Site ekle</string>
+    <string name="site_add_title">Site ekle</string>
+    <string name="site_edit_title">Siteyi düzenle</string>
+    <string name="site_name_hint">Site adı (ör. Haberler)</string>
+    <string name="site_url_hint">Adres (ör. ornek.com)</string>
+    <string name="site_desc_hint">Açıklama (isteğe bağlı)</string>
+    <string name="site_save">Kaydet</string>
+    <string name="site_cancel">Vazgeç</string>
+    <string name="site_edit">Düzenle</string>
+    <string name="site_delete">Sil</string>
+    <string name="site_delete_confirm">%1$s listeden silinsin mi?</string>
+    <string name="site_info_none">Bu site için açıklama yok.</string>
+    <string name="err_url">Geçerli bir web adresi yazın (ör. ornek.com).</string>
+    <string name="err_url_dup">Bu site zaten listende.</string>
+    <string name="ok">Tamam</string>
+
+    <!-- Tema -->
+    <string name="section_palette">Tema</string>
+    <string name="palette_sunset">Gün Batımı</string>
+    <string name="palette_ocean">Okyanus</string>
+    <string name="palette_lavender">Lavanta</string>
+
+    <string name="channel_name">Oynatma</string>
+    <string name="channel_desc">Ekran kapalıyken içeriğin çalışmaya devam etmesini sağlar.</string>
+    <string name="notif_text">İçerik arka planda açık tutuluyor</string>
+
+    <!-- Menü -->
+    <string name="menu_open">Menü</string>
+    <string name="menu_home">Ana Sayfa</string>
+    <string name="menu_black">Siyah ekran</string>
+    <string name="black_hint">Çıkmak için ekrana çift dokunun</string>
+
+    <!-- Ayarlar -->
+    <string name="section_settings">Ayarlar</string>
+    <string name="section_ads">Reklam engelleme</string>
+    <string name="ad_block_title">Reklamları engelle</string>
+    <string name="ad_block_desc">Bilinen reklam sunucularını engeller ve reklam alanlarını gizler.</string>
+    <string name="back">Geri</string>
+
+    <string name="section_audio">Ses</string>
+    <string name="keep_audio_title">Ekran kapanınca sesi sürdür</string>
+    <string name="keep_audio_desc">Açıkken telefonu kilitleseniz veya uygulamadan çıksanız bile sitedeki ses ve video çalmaya devam eder.</string>
+    <string name="battery_button">Pil kısıtlamasını kaldır (önerilir)</string>
+    <string name="battery_hint">Bazı telefonlarda (ör. Xiaomi) sistem arka plandaki sesi kesebilir. Açılan ekranda Kılıf için pil tasarrufunu "Kısıtlama yok" yapın.</string>
+    <string name="battery_open_failed">Pil ayarları açılamadı. Ayarlar → Uygulamalar → Kılıf bölümünden pil kısıtlamasını kaldırın.</string>
+
+    <string name="rec_notice">Ses kaydı algılandı. İçerik durduruldu; kayıt bitince geri gelecek.</string>
+
+    <string name="section_theme">Görünüm</string>
+    <string name="theme_system">Sistemle aynı</string>
+    <string name="theme_light">Gündüz modu</string>
+    <string name="theme_dark">Gece modu</string>
+
+    <string name="section_font">Yazı boyutu</string>
+    <string name="font_reset">Varsayılan</string>
+    <string name="font_preview">Örnek yazı: Kılıf ile sitelerin hep yanında.</string>
+</resources>

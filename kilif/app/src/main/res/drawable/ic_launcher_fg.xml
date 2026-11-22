@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kılıf logosu: sade bir telefon kılıfı -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M48,31 H60 A7,7 0 0 1 67,38 V70 A7,7 0 0 1 60,77 H48 A7,7 0 0 1 41,70 V38 A7,7 0 0 1 48,31 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M49,36 H52 A3,3 0 0 1 55,39 V44 A3,3 0 0 1 52,47 H49 A3,3 0 0 1 46,44 V39 A3,3 0 0 1 49,36 Z" />
+</vector>

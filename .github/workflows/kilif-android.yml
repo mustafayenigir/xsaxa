@@ -1,0 +1,67 @@
+name: Kilif APK Derle
+
+# Sadece kilif/ (Android kismi) degisince (veya elle) calisir.
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'kilif/**'
+      - '!kilif/desktop/**'
+      - '.github/workflows/kilif-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kilif
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: gradlew calistirilabilir yap
+        run: chmod +x ./gradlew
+
+      - name: APK derle (debug)
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: APK adini duzenle
+        run: cp app/build/outputs/apk/debug/app-debug.apk Kilif.apk
+
+      - name: APK yukle (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kilif-apk
+          path: kilif/Kilif.apk
+          if-no-files-found: error
+
+      # Sabit indirme baglantisi: https://github.com/<kullanici>/<depo>/releases/download/kilif-android/Kilif.apk
+      # Surum silinip yeniden olusturulmaz; dosya yerinde degistirilir (taslakta kalma / 404 riski olmasin).
+      - name: Release olarak yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          if gh release view kilif-android >/dev/null 2>&1; then
+            gh release upload kilif-android Kilif.apk --clobber
+          else
+            gh release create kilif-android Kilif.apk --title "Kilif Android (son surum)" --notes "Otomatik derleme" --target "${GITHUB_SHA}" --latest=false
+          fi
+          gh release edit kilif-android --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}" --latest=false
+          # Baglanti gercekten calisiyor mu? (en cok ~1 dk dene)
+          for i in 1 2 3 4 5 6; do
+            if curl -sfL -r 0-0 -o /dev/null "https://github.com/${GITHUB_REPOSITORY}/releases/download/kilif-android/Kilif.apk"; then echo "Baglanti hazir"; exit 0; fi
+            sleep 10
+          done
+          echo "Indirme baglantisi calismiyor"; exit 1

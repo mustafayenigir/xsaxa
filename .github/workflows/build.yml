@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - 'desktop/**'
       - '.github/workflows/desktop.yml'
+      - 'kilif/**'
+      - '.github/workflows/kilif-*.yml'
   workflow_dispatch:
 
 permissions:
@@ -41,14 +43,23 @@ jobs:
           path: Meyvem.apk
           if-no-files-found: error
 
-      # Telefondan tek dokunusla indirilebilen sabit baglanti:
-      # https://github.com/<kullanici>/<depo>/releases/latest/download/Meyvem.apk
+      # Sabit indirme baglantisi: https://github.com/<kullanici>/<depo>/releases/download/latest/Meyvem.apk
+      # Surum silinip yeniden olusturulmaz; dosya yerinde degistirilir (taslakta kalma / 404 riski olmasin).
       - name: Release olarak yayinla
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete latest --cleanup-tag --yes || true
-          gh release create latest Meyvem.apk \
-            --title "Meyvem (son surum)" \
-            --notes "Otomatik derleme: ${GITHUB_SHA}" \
-            --target "${GITHUB_SHA}"
+          set -e
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest Meyvem.apk --clobber
+          else
+            gh release create latest Meyvem.apk --title "Meyvem (son surum)" --notes "Otomatik derleme" --target "${GITHUB_SHA}"
+          fi
+          gh release edit latest --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}"
+          # Baglanti gercekten calisiyor mu? (en cok ~1 dk dene)
+          for i in 1 2 3 4 5 6; do
+            if curl -sfL -r 0-0 -o /dev/null "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/Meyvem.apk"; then echo "Baglanti hazir"; exit 0; fi
+            sleep 10
+          done
+          echo "Indirme baglantisi calismiyor"; exit 1

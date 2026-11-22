@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Seçilen siteyi gösteren WebView -->
+    <com.kilif.app.BackgroundWebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Panel dışına dokununca paneli kapatan görünmez katman -->
+    <View
+        android:id="@+id/menuScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="false"
+        android:visibility="gone" />
+
+    <!-- Yüzen düğmeye dokununca açılan küçük pencere -->
+    <LinearLayout
+        android:id="@+id/menuPanel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_panel"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="6dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/menuItemSettings"
+            style="@style/PanelItem"
+            android:drawableStart="@drawable/ic_settings_light"
+            android:text="@string/menu_home" />
+
+        <TextView
+            android:id="@+id/menuItemBlack"
+            style="@style/PanelItem"
+            android:drawableStart="@drawable/ic_power"
+            android:text="@string/menu_black" />
+
+    </LinearLayout>
+
+    <!-- Site açıkken yüzen, yarı saydam, sürüklenebilir düğme (iPhone AssistiveTouch gibi) -->
+    <com.kilif.app.AssistiveTouchView
+        android:id="@+id/menuButton"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="top|start"
+        android:contentDescription="@string/menu_open"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_assistive"
+        android:visibility="gone" />
+
+    <!-- Siyah ekran modu: tüm ekranı kaplar, çift dokunuşla kapanır -->
+    <View
+        android:id="@+id/blackOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone" />
+
+    <!-- Başka bir uygulama ses kaydı yaparken içerik durdurulur; bu ekran gösterilir -->
+    <TextView
+        android:id="@+id/recordNotice"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="@string/rec_notice"
+        android:textColor="#8A8A8A"
+        android:textSize="16sp"
+        android:visibility="gone" />
+</FrameLayout>

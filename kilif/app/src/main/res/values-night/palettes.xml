@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Palette1">
+        <item name="cBackground">#0E1A2C</item>
+        <item name="cSurface">#17283F</item>
+        <item name="cAccentText">#7DB8F5</item>
+        <item name="cGradStart">#1B4F9C</item>
+        <item name="cGradEnd">#0F2A5C</item>
+        <item name="cOutline">#26405F</item>
+        <item name="cPrimary">#2379D6</item>
+        <item name="colorPrimary">#2379D6</item>
+        <item name="android:statusBarColor">#0F2A5C</item>
+        <item name="android:windowBackground">#0E1A2C</item>
+    </style>
+    <style name="Palette2">
+        <item name="cBackground">#150E26</item>
+        <item name="cSurface">#221838</item>
+        <item name="cAccentText">#C7A0FF</item>
+        <item name="cGradStart">#5B2DB8</item>
+        <item name="cGradEnd">#2E1670</item>
+        <item name="cOutline">#3A2C60</item>
+        <item name="cPrimary">#7C3FD6</item>
+        <item name="colorPrimary">#7C3FD6</item>
+        <item name="android:statusBarColor">#2E1670</item>
+        <item name="android:windowBackground">#150E26</item>
+    </style>
+</resources>

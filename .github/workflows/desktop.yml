@@ -40,17 +40,23 @@ jobs:
           path: desktop/dist/Meyvem.exe
           if-no-files-found: error
 
-      # Sabit indirme baglantisi:
-      # https://github.com/<kullanici>/<depo>/releases/download/windows/Meyvem.exe
-      # --latest=false: Android APK'nin "releases/latest" baglantisini bozmaz.
+      # Sabit indirme baglantisi: https://github.com/<kullanici>/<depo>/releases/download/windows/Meyvem.exe
+      # Surum silinip yeniden olusturulmaz; dosya yerinde degistirilir (taslakta kalma / 404 riski olmasin).
       - name: Release olarak yayinla
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete windows --cleanup-tag --yes || true
-          gh release create windows dist/Meyvem.exe \
-            --title "Meyvem Windows (son surum)" \
-            --notes "Otomatik derleme: ${GITHUB_SHA}" \
-            --target "${GITHUB_SHA}" \
-            --latest=false
+          set -e
+          if gh release view windows >/dev/null 2>&1; then
+            gh release upload windows dist/Meyvem.exe --clobber
+          else
+            gh release create windows dist/Meyvem.exe --title "Meyvem Windows (son surum)" --notes "Otomatik derleme" --target "${GITHUB_SHA}" --latest=false
+          fi
+          gh release edit windows --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}" --latest=false
+          # Baglanti gercekten calisiyor mu? (en cok ~1 dk dene)
+          for i in 1 2 3 4 5 6; do
+            if curl -sfL -r 0-0 -o /dev/null "https://github.com/${GITHUB_REPOSITORY}/releases/download/windows/Meyvem.exe"; then echo "Baglanti hazir"; exit 0; fi
+            sleep 10
+          done
+          echo "Indirme baglantisi calismiyor"; exit 1

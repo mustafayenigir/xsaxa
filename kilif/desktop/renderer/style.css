@@ -1,0 +1,98 @@
+:root {
+  --bg: #fff7ee;
+  --card: #ffffff;
+  --text: #2a1f3d;
+  --muted: #7b6f8e;
+  --accent: #ff5a36;
+  --accent-text: #ffffff;
+  --accent-ink: #d93f1e;
+  --border: #eadfd2;
+  --g1: #ff9a3d;
+  --g2: #ff3d87;
+  --shadow: 0 4px 14px rgba(120, 60, 20, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17102a;
+    --card: #231a3d;
+    --text: #f6efff;
+    --muted: #b3a6cc;
+    --accent: #ff6b4a;
+    --accent-text: #ffffff;
+    --accent-ink: #ff8a6b;
+    --border: #3a2d5c;
+    --g1: #ff8a3d;
+    --g2: #d6336c;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+}
+
+h1 { font-size: 24px; margin: 0 0 24px; text-align: center; font-weight: 800; }
+h2 {
+  font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent-ink); margin: 28px 0 10px;
+}
+
+input[type="password"], input[type="text"] {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  outline: none;
+  user-select: text;
+}
+input[type="password"]:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+button:hover { border-color: var(--accent); }
+button.primary {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-text);
+  background: linear-gradient(135deg, var(--g1), var(--g2));
+  border: none;
+  box-shadow: var(--shadow);
+}
+button.primary:hover { filter: brightness(1.06); }
+button.link {
+  border: none;
+  color: var(--accent-ink);
+  padding: 6px 8px;
+}
+
+.hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+.msg { min-height: 20px; margin-top: 14px; text-align: center; font-size: 14px; }
+
+/* Renk temaları (palette.js <html data-palette="N"> ayarlar): 0 Gün Batımı, 1 Okyanus, 2 Lavanta */
+[data-palette="1"] { --bg: #EEF6FF; --card: #ffffff; --border: #D4E3F5; --accent: #2379D6; --accent-ink: #1B5FB0; --g1: #3FA9F5; --g2: #1B4F9C; }
+[data-palette="2"] { --bg: #F6F0FF; --card: #ffffff; --border: #E3D6F7; --accent: #7C3FD6; --accent-ink: #6A2FC4; --g1: #B06AF0; --g2: #5B2DB8; }
+@media (prefers-color-scheme: dark) {
+  [data-palette="1"] { --bg: #0E1A2C; --card: #17283F; --border: #26405F; --accent: #2379D6; --accent-ink: #7DB8F5; --g1: #1B4F9C; --g2: #0F2A5C; }
+  [data-palette="2"] { --bg: #150E26; --card: #221838; --border: #3A2C60; --accent: #7C3FD6; --accent-ink: #C7A0FF; --g1: #5B2DB8; --g2: #2E1670; }
+}

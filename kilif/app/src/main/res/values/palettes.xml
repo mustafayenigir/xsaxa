@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Renk temaları: 0 Gün Batımı, 1 Okyanus, 2 Lavanta. Gece sürümü values-night/palettes.xml -->
+    <style name="Palette0">
+        <item name="cBackground">@color/background</item>
+        <item name="cSurface">@color/surface</item>
+        <item name="cAccentText">@color/accent_text</item>
+        <item name="cGradStart">@color/gradient_start</item>
+        <item name="cGradEnd">@color/gradient_end</item>
+        <item name="cOutline">@color/outline</item>
+        <item name="cPrimary">@color/primary</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+    <style name="Palette1">
+        <item name="cBackground">#EEF6FF</item>
+        <item name="cSurface">#FFFFFF</item>
+        <item name="cAccentText">#1B5FB0</item>
+        <item name="cGradStart">#3FA9F5</item>
+        <item name="cGradEnd">#1B4F9C</item>
+        <item name="cOutline">#D4E3F5</item>
+        <item name="cPrimary">#2379D6</item>
+        <item name="colorPrimary">#2379D6</item>
+        <item name="android:statusBarColor">#1B4F9C</item>
+        <item name="android:windowBackground">#EEF6FF</item>
+    </style>
+    <style name="Palette2">
+        <item name="cBackground">#F6F0FF</item>
+        <item name="cSurface">#FFFFFF</item>
+        <item name="cAccentText">#6A2FC4</item>
+        <item name="cGradStart">#B06AF0</item>
+        <item name="cGradEnd">#5B2DB8</item>
+        <item name="cOutline">#E3D6F7</item>
+        <item name="cPrimary">#7C3FD6</item>
+        <item name="colorPrimary">#7C3FD6</item>
+        <item name="android:statusBarColor">#5B2DB8</item>
+        <item name="android:windowBackground">#F6F0FF</item>
+    </style>
+</resources>

@@ -1,0 +1,40 @@
+{
+  "name": "kilif",
+  "productName": "Kılıf",
+  "version": "1.0.0",
+  "description": "Kılıf - kendi sitelerini güvenle görüntüle",
+  "main": "main.js",
+  "author": "Kılıf",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.kilif.desktop",
+    "productName": "Kılıf",
+    "artifactName": "Kilif.exe",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "adblock.js",
+      "renderer/**",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    }
+  }
+}
