@@ -138,6 +138,12 @@ class HomeActivity : AppCompatActivity() {
         return this
     }
 
+    // Harf dairesi için canlı renkler (site adından seçilir; aynı site hep aynı rengi alır)
+    private val tilePalette = intArrayOf(
+        0xFFFF5A36.toInt(), 0xFFFF3D87.toInt(), 0xFF8E44EC.toInt(), 0xFF2D9CDB.toInt(),
+        0xFF1DB98A.toInt(), 0xFFF2A100.toInt()
+    )
+
     /** Her site için logo + altında adı olan bir kutucuk çizer. Sağ alttaki "i" açıklamayı ve düzenle/sil seçeneklerini gösterir. */
     private fun renderSites() {
         val list = Sites.list(this)
