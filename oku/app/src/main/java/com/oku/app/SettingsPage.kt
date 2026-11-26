@@ -28,9 +28,9 @@ class SettingsPage(
         // Hesap
         box.addView(Ui.section(c, c.getString(R.string.set_account)))
         val acc = Ui.vbox(c).apply { background = Ui.card(c); setPadding(dp(16), dp(14), dp(16), dp(14)) }
-        val id = Account.identity(c)
+        val ident = Account.identity(c)
         acc.addView(Ui.text(c, Account.name(c).ifBlank { "—" }, 17f, bold = true))
-        acc.addView(Ui.muted(c, c.getString(if (BuildConfig.PARENT) R.string.set_parent_no else R.string.set_student_no, id?.no ?: "—"), 14f), Ui.matchWrap(2, c))
+        acc.addView(Ui.muted(c, c.getString(if (BuildConfig.PARENT) R.string.set_parent_no else R.string.set_student_no, ident?.no ?: "—"), 14f), Ui.matchWrap(2, c))
         acc.addView(MaterialButton(c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             setText(R.string.menu_lock)
             setIconResource(R.drawable.ic_lock)
