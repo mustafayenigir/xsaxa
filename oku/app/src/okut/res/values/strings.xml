@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Okut</string>
+    <string name="brand">📘 Okut</string>
+    <string name="no_title">Veli girişi</string>
+    <string name="no_hint">Veli numaranız</string>
+    <string name="info_no">Okulunuzun verdiği veli numarasını yazın. Bu yalnızca ilk girişte, bir kez istenir.</string>
+</resources>

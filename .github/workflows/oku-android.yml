@@ -1,0 +1,85 @@
+name: Oku ve Okut APK Derle
+
+# Sadece oku/ klasoru degisince (veya elle) calisir. Ayni koddan iki uygulama cikar.
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'oku/**'
+      - '.github/workflows/oku-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oku
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: gradlew calistirilabilir yap
+        run: chmod +x ./gradlew
+
+      - name: APK'lari derle (Oku + Okut)
+        run: ./gradlew assembleOkuDebug assembleOkutDebug --no-daemon --stacktrace
+
+      - name: APK adlarini duzenle
+        run: |
+          cp app/build/outputs/apk/oku/debug/app-oku-debug.apk Oku.apk
+          cp app/build/outputs/apk/okut/debug/app-okut-debug.apk Okut.apk
+
+      - name: APK'lari yukle (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: oku-okut-apk
+          path: |
+            oku/Oku.apk
+            oku/Okut.apk
+          if-no-files-found: error
+
+      - name: Oku Android yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          if gh release view oku-android >/dev/null 2>&1; then
+            gh release upload oku-android Oku.apk --clobber
+          else
+            gh release create oku-android Oku.apk --title "Oku Android (son surum)" --notes "Otomatik derleme" --target "${GITHUB_SHA}" --latest=false
+          fi
+          gh release edit oku-android --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}" --latest=false
+          for i in 1 2 3 4 5 6; do
+            if curl -sfL -r 0-0 -o /dev/null "https://github.com/${GITHUB_REPOSITORY}/releases/download/oku-android/Oku.apk"; then echo "Baglanti hazir"; exit 0; fi
+            sleep 10
+          done
+          echo "Indirme baglantisi calismiyor"; exit 1
+
+      - name: Okut Android yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          if gh release view okut-android >/dev/null 2>&1; then
+            gh release upload okut-android Okut.apk --clobber
+          else
+            gh release create okut-android Okut.apk --title "Okut Android (son surum)" --notes "Otomatik derleme" --target "${GITHUB_SHA}" --latest=false
+          fi
+          gh release edit okut-android --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}" --latest=false
+          for i in 1 2 3 4 5 6; do
+            if curl -sfL -r 0-0 -o /dev/null "https://github.com/${GITHUB_REPOSITORY}/releases/download/okut-android/Okut.apk"; then echo "Baglanti hazir"; exit 0; fi
+            sleep 10
+          done
+          echo "Indirme baglantisi calismiyor"; exit 1

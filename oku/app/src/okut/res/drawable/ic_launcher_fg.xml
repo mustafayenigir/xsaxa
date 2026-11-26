@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kitap logosu -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:pathData="M54,40 C46,34 36,33 26,35 L26,73 C36,71 46,72 54,78 Z" />
+    <path android:fillColor="#DCEBFF" android:pathData="M54,40 C62,34 72,33 82,35 L82,73 C72,71 62,72 54,78 Z" />
+    <path android:strokeColor="#1B4F9C" android:strokeWidth="1.6" android:pathData="M54,40 L54,78" />
+    <path android:fillColor="#FF6B8B" android:pathData="M68,61.3 C56.8,54.3 61.7,45.9 68,51.9 C74.3,45.9 79.2,54.3 68,61.3 Z" />
+</vector>

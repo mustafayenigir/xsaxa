@@ -1,0 +1,119 @@
+<resources>
+    <!-- Kilit / kayıt -->
+    <string name="create_title">Şifreni oluştur</string>
+    <string name="info_password">Bu cihazda uygulamayı açarken kullanacağın şifreyi belirle (en az 4 karakter).</string>
+    <string name="info_password_name">Hoş geldin %1$s! Bu cihazda uygulamayı açarken kullanacağın şifreyi belirle (en az 4 karakter).</string>
+    <string name="create_button">Kaydet ve devam et</string>
+    <string name="no_button">Devam et</string>
+    <string name="enter_title">Tekrar hoş geldin</string>
+    <string name="enter_title_name">Merhaba %1$s</string>
+    <string name="enter_button">Giriş yap</string>
+    <string name="password_hint">Şifre</string>
+    <string name="password_confirm_hint">Şifre (tekrar)</string>
+    <string name="checking">Kontrol ediliyor…</string>
+    <string name="err_no_format">Numarayı kontrol edin (yalnızca harf, rakam ve tire).</string>
+    <string name="err_no_invalid">Bu numara listede bulunamadı. Okulunuzla iletişime geçin.</string>
+    <string name="err_busy">Şu an çok fazla deneme var, biraz sonra tekrar deneyin.</string>
+    <string name="err_auth">Hesap doğrulanamadı. Okulunuzla iletişime geçin.</string>
+    <string name="err_server">Sunucuya ulaşılamadı, biraz sonra tekrar deneyin.</string>
+    <string name="err_network">İnternet bağlantısı yok gibi görünüyor.</string>
+    <string name="err_network_cached">Bağlantı yok; son kaydedilen bilgiler gösteriliyor.</string>
+    <string name="err_empty">Şifre boş olamaz.</string>
+    <string name="err_short">Şifre en az 4 karakter olmalı.</string>
+    <string name="err_mismatch">Şifreler aynı değil.</string>
+    <string name="err_wrong">Şifre yanlış.</string>
+
+    <!-- Google adımı (öğrenci) -->
+    <string name="google_title">Google hesabınla oturum aç</string>
+    <string name="info_google">Bir kez oturum açman yeterli; uygulamadaki tüm sitelerde bu oturum geçerli olur.</string>
+    <string name="google_status_wait">Oturum açman bekleniyor…</string>
+    <string name="google_status_ok">Oturum açıldı ✓</string>
+    <string name="google_continue">Devam et</string>
+
+    <!-- Kabuk -->
+    <string name="nav_home">Ana Sayfa</string>
+    <string name="nav_calendar">Takvim</string>
+    <string name="nav_settings">Ayarlar</string>
+    <string name="notices">Bildirimler</string>
+    <string name="notices_count">Bildirimler (%1$d)</string>
+    <string name="notice_all_read">Tümü okundu</string>
+    <string name="notice_empty">Şimdilik bildirim yok.</string>
+    <string name="notice_today_lesson">Bugün</string>
+    <string name="more">Diğer</string>
+    <string name="back">Geri</string>
+    <string name="refresh">Yenile</string>
+    <string name="menu_open">Menü</string>
+    <string name="menu_black">Siyah ekran</string>
+    <string name="menu_lock">Kilitle</string>
+    <string name="black_hint">Çıkmak için ekrana çift dokunun</string>
+    <string name="loading">Güncelleniyor…</string>
+    <string name="open">Aç</string>
+    <string name="close">Kapat</string>
+
+    <!-- Ana sayfa -->
+    <string name="home_hello">Merhaba 👋</string>
+    <string name="home_hello_name">Merhaba %1$s 👋</string>
+    <string name="home_today">Bugünkü dersler</string>
+    <string name="home_sites">Siteler</string>
+    <string name="home_sites_empty">Henüz site eklenmedi.</string>
+    <string name="home_children">Öğrencilerim</string>
+    <string name="home_children_empty">Size bağlı öğrenci bulunamadı. Okulunuzla iletişime geçin.</string>
+    <string name="site_info_none">Bu site için açıklama yok.</string>
+    <string name="site_info_desc">%1$s hakkında</string>
+
+    <!-- Veli: öğrenci kartı -->
+    <string name="child_no">No %1$s</string>
+    <string name="child_not_found">Bu numara öğrenci listesinde yok.</string>
+    <string name="child_not_registered">Henüz uygulamaya kaydolmadı.</string>
+    <string name="child_last">Son giriş: %1$s</string>
+    <string name="child_today">Bugün %1$s</string>
+    <string name="child_week">7 gün %1$s</string>
+    <string name="child_total">Toplam %1$s</string>
+    <string name="child_tap">Giriş geçmişi için dokunun</string>
+    <string name="child_since">Kayıt: %1$s</string>
+    <string name="child_count">Giriş sayısı: %1$d</string>
+    <string name="child_history">Son girişler</string>
+
+    <!-- Takvim -->
+    <string name="cal_month">Ay</string>
+    <string name="cal_week">Hafta</string>
+    <string name="cal_day">Gün</string>
+    <string name="cal_today">Bugün</string>
+    <string name="cal_prev">Önceki</string>
+    <string name="cal_next">Sonraki</string>
+    <string name="cal_empty_month">Bu ay için ders yok.</string>
+    <string name="cal_empty_day">Bu gün için ders yok.</string>
+    <string name="event_no_zoom">Bu ders için Zoom linki yok.</string>
+    <string name="event_open_day">Günü aç</string>
+
+    <!-- Zoom -->
+    <string name="zoom_join">Zoom\'a katıl</string>
+    <string name="zoom_join_short">Katıl</string>
+    <string name="zoom_open_failed">Zoom açılamadı. Telefonunuzda Zoom uygulaması kurulu mu?</string>
+
+    <!-- Ayarlar -->
+    <string name="set_account">Hesap</string>
+    <string name="set_student_no">Öğrenci No: %1$s</string>
+    <string name="set_parent_no">Veli No: %1$s</string>
+    <string name="set_audio">Ses</string>
+    <string name="keep_audio_title">Ekran kapanınca sesi sürdür</string>
+    <string name="keep_audio_desc">Açıkken telefonu kilitleseniz bile sitedeki ses ve video çalmaya devam eder.</string>
+    <string name="battery_button">Pil kısıtlamasını kaldır (önerilir)</string>
+    <string name="battery_open_failed">Pil ayarları açılamadı. Ayarlar → Uygulamalar bölümünden pil kısıtlamasını kaldırın.</string>
+    <string name="set_ads">Reklam engelleme</string>
+    <string name="ad_block_title">Reklamları engelle</string>
+    <string name="ad_block_desc">Bilinen reklam sunucularını engeller ve reklam alanlarını gizler.</string>
+    <string name="set_theme">Görünüm</string>
+    <string name="theme_system">Sistemle aynı</string>
+    <string name="theme_light">Gündüz modu</string>
+    <string name="theme_dark">Gece modu</string>
+    <string name="set_font">Site yazı boyutu</string>
+    <string name="font_reset">Varsayılan</string>
+    <string name="set_about">Hakkında</string>
+    <string name="about_text">%1$s · sürüm %2$s</string>
+
+    <string name="rec_notice">Ses kaydı algılandı. İçerik durduruldu; kayıt bitince geri gelecek.</string>
+    <string name="channel_name">Oynatma</string>
+    <string name="channel_desc">Ekran kapalıyken içeriğin çalmaya devam etmesini sağlar.</string>
+    <string name="notif_text">İçerik arka planda açık tutuluyor</string>
+</resources>

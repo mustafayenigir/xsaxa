@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Oku</string>
+    <string name="brand">📘 Oku</string>
+    <string name="no_title">Öğrenci girişi</string>
+    <string name="no_hint">Öğrenci numaran</string>
+    <string name="info_no">Okulunun verdiği öğrenci numaranı yaz. Bu yalnızca ilk girişte, bir kez istenir.</string>
+</resources>
