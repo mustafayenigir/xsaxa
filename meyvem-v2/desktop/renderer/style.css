@@ -1,0 +1,112 @@
+:root {
+  --bg: #fff7ee;
+  --card: #ffffff;
+  --text: #2a1f3d;
+  --muted: #7b6f8e;
+  --accent: #ff5a36;
+  --accent-text: #ffffff;
+  --accent-ink: #d93f1e;
+  --border: #eadfd2;
+  --g1: #ff9a3d;
+  --g2: #ff3d87;
+  --shadow: 0 4px 14px rgba(120, 60, 20, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17102a;
+    --card: #231a3d;
+    --text: #f6efff;
+    --muted: #b3a6cc;
+    --accent: #ff6b4a;
+    --accent-text: #ffffff;
+    --accent-ink: #ff8a6b;
+    --border: #3a2d5c;
+    --g1: #ff8a3d;
+    --g2: #d6336c;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+}
+
+h1 { font-size: 24px; margin: 0 0 24px; text-align: center; font-weight: 800; }
+h2 {
+  font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--accent-ink); margin: 28px 0 10px;
+}
+
+input[type="password"], input[type="text"] {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  outline: none;
+  user-select: text;
+}
+input[type="password"]:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+button:hover { border-color: var(--accent); }
+button.primary {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-text);
+  background: linear-gradient(135deg, var(--g1), var(--g2));
+  border: none;
+  box-shadow: var(--shadow);
+}
+button.primary:hover { filter: brightness(1.06); }
+button.link {
+  border: none;
+  color: var(--accent-ink);
+  padding: 6px 8px;
+}
+
+.hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+.msg { min-height: 20px; margin-top: 14px; text-align: center; font-size: 14px; }
+
+/* Kişilik (Enneagram'dan esinlenen) renk temaları — palette.js <html data-palette="N"> ayarlar */
+[data-palette="1"] { --bg: #EEF6FF; --card: #ffffff; --border: #D4E3F5; --accent: #2379D6; --accent-ink: #1B5FB0; --g1: #3FA9F5; --g2: #1B4F9C; }
+[data-palette="2"] { --bg: #FFF0F5; --card: #ffffff; --border: #F5D6E1; --accent: #E8457C; --accent-ink: #C42A60; --g1: #FF8FB1; --g2: #E8457C; }
+[data-palette="3"] { --bg: #FFF8E6; --card: #ffffff; --border: #F3E3BD; --accent: #F08A00; --accent-ink: #B85A00; --g1: #F0A000; --g2: #D9480F; }
+[data-palette="4"] { --bg: #F6F0FF; --card: #ffffff; --border: #E3D6F7; --accent: #7C3FD6; --accent-ink: #6A2FC4; --g1: #B06AF0; --g2: #5B2DB8; }
+[data-palette="5"] { --bg: #ECF8F4; --card: #ffffff; --border: #CDE6DE; --accent: #12876F; --accent-ink: #0B6B55; --g1: #1FA37A; --g2: #0B5D6B; }
+[data-palette="6"] { --bg: #EFF1FC; --card: #ffffff; --border: #D6DBF3; --accent: #3B55C9; --accent-ink: #2C3FA3; --g1: #4E6BDB; --g2: #1E2A78; }
+[data-palette="7"] { --bg: #F1FAEA; --card: #ffffff; --border: #D9EBCB; --accent: #21A868; --accent-ink: #0F7E59; --g1: #3DAE3A; --g2: #0E8F85; }
+[data-palette="8"] { --bg: #FFF0EE; --card: #ffffff; --border: #F4D3CF; --accent: #D8283A; --accent-ink: #B3162B; --g1: #FF4B3E; --g2: #8E0F2B; }
+[data-palette="9"] { --bg: #EEF9F7; --card: #ffffff; --border: #D0E9E4; --accent: #3FA0AE; --accent-ink: #2A7F8C; --g1: #4FB99A; --g2: #3A86C8; }
+@media (prefers-color-scheme: dark) {
+  [data-palette="1"] { --bg: #0E1A2C; --card: #17283F; --border: #26405F; --accent: #2379D6; --accent-ink: #7DB8F5; --g1: #1B4F9C; --g2: #0F2A5C; }
+  [data-palette="2"] { --bg: #24101A; --card: #36192A; --border: #5A2A42; --accent: #E8457C; --accent-ink: #FF8FB1; --g1: #A02455; --g2: #5C1233; }
+  [data-palette="3"] { --bg: #21170A; --card: #33230E; --border: #55391A; --accent: #F08A00; --accent-ink: #FFB84D; --g1: #A86100; --g2: #7A2E05; }
+  [data-palette="4"] { --bg: #150E26; --card: #221838; --border: #3A2C60; --accent: #7C3FD6; --accent-ink: #C7A0FF; --g1: #5B2DB8; --g2: #2E1670; }
+  [data-palette="5"] { --bg: #0A1B1A; --card: #112B29; --border: #1D4540; --accent: #12876F; --accent-ink: #5FD3B0; --g1: #0B6B55; --g2: #073B45; }
+  [data-palette="6"] { --bg: #0E1226; --card: #181E3E; --border: #2A3366; --accent: #3B55C9; --accent-ink: #94A6F5; --g1: #2E3FA0; --g2: #141B54; }
+  [data-palette="7"] { --bg: #0E1C12; --card: #15301F; --border: #244A33; --accent: #21A868; --accent-ink: #8EE07A; --g1: #2E7D32; --g2: #0A5C54; }
+  [data-palette="8"] { --bg: #1E0D0F; --card: #331619; --border: #55262B; --accent: #D8283A; --accent-ink: #FF7A70; --g1: #9C1B2B; --g2: #4D0A17; }
+  [data-palette="9"] { --bg: #0D1B1D; --card: #14292C; --border: #224247; --accent: #3FA0AE; --accent-ink: #7FD6D0; --g1: #2A7F8C; --g2: #24508A; }
+}

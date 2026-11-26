@@ -8,7 +8,9 @@ on:
       - 'desktop/**'
       - '.github/workflows/desktop.yml'
       - 'kilif/**'
+      - 'meyvem-v2/**'
       - '.github/workflows/kilif-*.yml'
+      - '.github/workflows/v2-*.yml'
   workflow_dispatch:
 
 permissions:

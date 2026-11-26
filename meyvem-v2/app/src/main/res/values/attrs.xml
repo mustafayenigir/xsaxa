@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="cBackground" format="color|reference" />
+    <attr name="cSurface" format="color|reference" />
+    <attr name="cAccentText" format="color|reference" />
+    <attr name="cGradStart" format="color|reference" />
+    <attr name="cGradEnd" format="color|reference" />
+    <attr name="cOutline" format="color|reference" />
+    <attr name="cPrimary" format="color|reference" />
+</resources>

@@ -9,3 +9,10 @@ kilif/desktop/dist/
 kilif/app/build/
 kilif/.gradle/
 kilif/build/
+
+# Meyvem V2
+meyvem-v2/desktop/node_modules/
+meyvem-v2/desktop/dist/
+meyvem-v2/app/build/
+meyvem-v2/.gradle/
+meyvem-v2/build/
