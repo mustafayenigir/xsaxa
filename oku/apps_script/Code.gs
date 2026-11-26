@@ -364,11 +364,13 @@ function zoomSig_(b) {
   if (!creds) return { ok: false, error: 'no_zoom' };
   const mn = String(b.meetingNumber || '').replace(/\D/g, '');
   if (!/^\d{9,12}$/.test(mn)) return { ok: false, error: 'bad_request' };
+  // İmza belirli bir toplantıya bağlanmaz (aynı oturumda farklı derslere de katılabilsin);
+  // Zoom en çok 48 saat geçerliliğe izin verir.
   const iat = Math.floor(Date.now() / 1000) - 30;
-  const exp = iat + 2 * 3600;
+  const exp = iat + 47 * 3600;
   const head = b64url_(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const body = b64url_(JSON.stringify({
-    appKey: creds.id, sdkKey: creds.id, mn: mn, role: 0, iat: iat, exp: exp, tokenExp: exp,
+    appKey: creds.id, sdkKey: creds.id, role: 0, iat: iat, exp: exp, tokenExp: exp,
   }));
   const sig = Utilities.computeHmacSha256Signature(head + '.' + body, creds.secret);
   return { ok: true, signature: head + '.' + body + '.' + b64urlBytes_(sig), name: a.person.name };

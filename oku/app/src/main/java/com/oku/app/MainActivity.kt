@@ -788,6 +788,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun onRecordings(sources: List<Int>) {
         if (!unlocked) return
+        // Zoom toplantısındaki kendi mikrofonumuz "kayıt" sayılmasın
+        if (ZoomSdkBridge.inMeeting()) return
         if (sources.isNotEmpty()) {
             ui.removeCallbacks(recResume)
             if (!recPaused) {

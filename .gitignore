@@ -19,3 +19,6 @@ meyvem-v2/build/
 oku/app/build/
 oku/.gradle/
 oku/build/
+
+# Zoom SDK (lisanslı, depoya konmaz)
+oku/mobilertc/mobilertc.aar
