@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Kitap</string>
+    <string name="brand">📖 Kitap</string>
+    <string name="code_title">Hoş geldiniz</string>
+    <string name="code_hint">Yetki kodu</string>
+    <string name="info_code">Size verilen yetki kodunu yazın. Bu yalnızca ilk girişte, bir kez istenir.</string>
+</resources>

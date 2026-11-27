@@ -1,0 +1,14 @@
+<resources>
+    <!-- Lacivert tema (Üye Yönetim, gündüz) -->
+    <color name="primary">#24477F</color>
+    <color name="primary_dark">#162C52</color>
+    <color name="background">#F2F5FA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_background">#141E30</color>
+    <color name="on_background_muted">#5B6780</color>
+    <color name="accent_text">#24477F</color>
+    <color name="gradient_start">#3B6BB5</color>
+    <color name="gradient_end">#162C52</color>
+    <color name="outline">#D5DEEC</color>
+    <color name="notice_bg">#EBFFFFFF</color>
+</resources>

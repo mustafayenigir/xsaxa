@@ -11,6 +11,8 @@ on:
       - 'meyvem-v2/**'
       - 'oku/**'
       - '.github/workflows/oku-android.yml'
+      - 'kitap/**'
+      - '.github/workflows/kitap-android.yml'
       - '.github/workflows/kilif-*.yml'
       - '.github/workflows/v2-*.yml'
   workflow_dispatch:

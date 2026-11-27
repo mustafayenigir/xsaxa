@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Üye Yönetim</string>
+    <string name="brand">🗂️ Üye Yönetim</string>
+    <string name="code_title">Yönetici girişi</string>
+    <string name="code_hint">Yönetici yetki kodu</string>
+    <string name="info_code">Excel\'deki "Yöneticiler" sayfasında yazan yetki kodunuzu girin. Bu yalnızca ilk girişte, bir kez istenir.</string>
+</resources>

@@ -1,0 +1,13 @@
+<resources>
+    <color name="primary">#6E9BE0</color>
+    <color name="primary_dark">#0E1B33</color>
+    <color name="background">#0C111C</color>
+    <color name="surface">#151D2D</color>
+    <color name="on_background">#E8EEF8</color>
+    <color name="on_background_muted">#A0AEC6</color>
+    <color name="accent_text">#8DB4F0</color>
+    <color name="gradient_start">#1F3A68</color>
+    <color name="gradient_end">#0E1B33</color>
+    <color name="outline">#24324A</color>
+    <color name="notice_bg">#E6151D2D</color>
+</resources>

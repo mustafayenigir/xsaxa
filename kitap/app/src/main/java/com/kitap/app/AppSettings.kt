@@ -1,0 +1,58 @@
+package com.kitap.app
+
+import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
+
+/** Ayarlar sayfasındaki tercihler. */
+object AppSettings {
+    private const val PREFS = "kitap_settings"
+
+    const val THEME_SYSTEM = 0
+    const val THEME_LIGHT = 1
+    const val THEME_DARK = 2
+
+    // Yazı boyutu: uygulamanın TAMAMINDA (menüler, Kitap, içerikler) geçerli
+    const val FONT_MIN = 80
+    const val FONT_MAX = 200
+    const val FONT_STEP = 10
+    const val FONT_DEFAULT = 100
+
+    private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    fun keepAudio(c: Context): Boolean = prefs(c).getBoolean("keep_audio", true)
+    fun setKeepAudio(c: Context, v: Boolean) = prefs(c).edit().putBoolean("keep_audio", v).apply()
+
+    fun adBlock(c: Context): Boolean = prefs(c).getBoolean("ad_block", true)
+    fun setAdBlock(c: Context, v: Boolean) = prefs(c).edit().putBoolean("ad_block", v).apply()
+
+    fun themeMode(c: Context): Int = prefs(c).getInt("theme_mode", THEME_SYSTEM)
+    fun setThemeMode(c: Context, v: Int) = prefs(c).edit().putInt("theme_mode", v).apply()
+
+    fun fontPercent(c: Context): Int = prefs(c).getInt("font_pct", FONT_DEFAULT).coerceIn(FONT_MIN, FONT_MAX)
+    fun setFontPercent(c: Context, v: Int) = prefs(c).edit().putInt("font_pct", v.coerceIn(FONT_MIN, FONT_MAX)).commit()
+
+    fun biometric(c: Context): Boolean = prefs(c).getBoolean("biometric", false)
+    fun setBiometric(c: Context, v: Boolean) = prefs(c).edit().putBoolean("biometric", v).apply()
+    fun biometricAsked(c: Context): Boolean = prefs(c).getBoolean("biometric_asked", false)
+    fun setBiometricAsked(c: Context) = prefs(c).edit().putBoolean("biometric_asked", true).apply()
+
+    // Takvimin son açık görünümü: 0 ay, 1 hafta, 2 gün
+    fun calendarMode(c: Context): Int = prefs(c).getInt("cal_mode", 0)
+    fun setCalendarMode(c: Context, v: Int) = prefs(c).edit().putInt("cal_mode", v).apply()
+
+    // Yüzen düğmenin konumu: 0=sol 1=sağ kenar, dikey oran 0..1
+    fun fabSide(c: Context): Int = prefs(c).getInt("fab_side", 1)
+    fun fabY(c: Context): Float = prefs(c).getFloat("fab_y", 0.7f)
+    fun setFabPosition(c: Context, side: Int, yFraction: Float) =
+        prefs(c).edit().putInt("fab_side", side).putFloat("fab_y", yFraction).apply()
+
+    fun applyNightMode(c: Context) {
+        AppCompatDelegate.setDefaultNightMode(
+            when (themeMode(c)) {
+                THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+                THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+        )
+    }
+}

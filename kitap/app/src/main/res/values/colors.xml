@@ -1,0 +1,14 @@
+<resources>
+    <!-- Yeşil tema (gündüz) -->
+    <color name="primary">#0B6B3A</color>
+    <color name="primary_dark">#07472D</color>
+    <color name="background">#F3F7F3</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_background">#17261C</color>
+    <color name="on_background_muted">#5F7066</color>
+    <color name="accent_text">#0B6B3A</color>
+    <color name="gradient_start">#138A57</color>
+    <color name="gradient_end">#0B5D3B</color>
+    <color name="outline">#D3E2D7</color>
+    <color name="notice_bg">#EBFFFFFF</color>
+</resources>

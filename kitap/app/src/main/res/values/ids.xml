@@ -1,0 +1,9 @@
+<resources>
+    <item name="nav_kitap" type="id" />
+    <item name="nav_home" type="id" />
+    <item name="nav_calendar" type="id" />
+    <item name="nav_settings" type="id" />
+    <item name="nav_people" type="id" />
+    <item name="nav_edu" type="id" />
+    <item name="nav_notices" type="id" />
+</resources>

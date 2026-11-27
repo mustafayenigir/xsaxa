@@ -1,0 +1,67 @@
+name: Kitap ve Uye Yonetim APK Derle
+
+# Sadece kitap/ klasoru degisince (veya elle) calisir. Ayni koddan iki uygulama cikar.
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'kitap/**'
+      - '.github/workflows/kitap-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kitap
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: gradlew calistirilabilir yap
+        run: chmod +x ./gradlew
+
+      - name: APK'lari derle (Kitap + Uye Yonetim)
+        run: ./gradlew assembleKitapDebug assembleYonetimDebug --no-daemon --stacktrace
+
+      - name: APK adlarini duzenle
+        run: |
+          cp app/build/outputs/apk/kitap/debug/app-kitap-debug.apk Kitap.apk
+          cp app/build/outputs/apk/yonetim/debug/app-yonetim-debug.apk UyeYonetim.apk
+
+      - name: APK'lari yukle (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitap-yonetim-apk
+          path: |
+            kitap/Kitap.apk
+            kitap/UyeYonetim.apk
+          if-no-files-found: error
+
+      - name: Yayinla
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          pub() {
+            tag="$1"; file="$2"; title="$3"
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release upload "$tag" "$file" --clobber
+            else
+              gh release create "$tag" "$file" --title "$title" --notes "Otomatik derleme" --target "${GITHUB_SHA}" --latest=false
+            fi
+            gh release edit "$tag" --draft=false --notes "Otomatik derleme: ${GITHUB_SHA}" --latest=false
+          }
+          pub kitap-android Kitap.apk "Kitap Android (son surum)"
+          pub yonetim-android UyeYonetim.apk "Uye Yonetim Android (son surum)"
