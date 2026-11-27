@@ -156,6 +156,7 @@ class MainActivity : AppCompatActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_main)
         bind()
+        CrashReport.showIfAny(this)
 
         calendar = CalendarView(this) { showEvent(it) }
         calendarPage.addView(calendar)

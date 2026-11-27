@@ -37,7 +37,10 @@ object ZoomSdkBridge {
     }
 
     private fun start(act: Activity, link: String, m: ZoomJoin.Meeting) {
-        val sdk = ZoomSDK.getInstance()
+        CrashReport.step(act, "1 başla")
+        val sdk = try { ZoomSDK.getInstance() } catch (e: Throwable) {
+            CrashReport.step(act, "1 hata: " + e); return fallback(act, link, m)
+        }
         if (sdk.isInitialized) {
             join(act, link, m)
             return
@@ -56,6 +59,7 @@ object ZoomSdkBridge {
                     fallback(act, link, m)
                     return@post
                 }
+                CrashReport.step(act, "3 init")
                 val params = ZoomSDKInitParams().apply {
                     jwtToken = sig
                     domain = "zoom.us"
@@ -65,13 +69,15 @@ object ZoomSdkBridge {
                     sdk.initialize(app, object : ZoomSDKInitializeListener {
                         override fun onZoomSDKInitializeResult(errorCode: Int, internalErrorCode: Int) {
                             initializing = false
+                            CrashReport.step(act, "4 init sonucu $errorCode/$internalErrorCode")
                             if (errorCode == ZoomError.ZOOM_ERROR_SUCCESS) join(act, link, m) else fallback(act, link, m)
                         }
 
                         override fun onZoomAuthIdentityExpired() {}
                     }, params)
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
                     initializing = false
+                    CrashReport.step(act, "3 init hata: $e")
                     fallback(act, link, m)
                 }
             }
@@ -106,7 +112,9 @@ object ZoomSdkBridge {
             displayName = Account.name(act).ifBlank { Account.identity(act)?.no ?: "Öğrenci" }
         }
         active = true
-        val rc = try { svc.joinMeetingWithParams(act, p, opts) } catch (_: Throwable) { -1 }
+        CrashReport.step(act, "5 katıl")
+        val rc = try { svc.joinMeetingWithParams(act, p, opts) } catch (e: Throwable) { CrashReport.step(act, "5 katıl hata: $e"); -1 }
+        CrashReport.step(act, "6 katıl dönüş $rc")
         if (rc != MeetingError.MEETING_ERROR_SUCCESS) {
             active = false
             fallback(act, link, m)

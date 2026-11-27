@@ -26,6 +26,7 @@ class OkuApp : Application() {
             override fun onActivitySaveInstanceState(a: Activity, b: Bundle) {}
             override fun onActivityDestroyed(a: Activity) {}
         })
+        CrashReport.install(this)
         ZoomSdkBridge.install(this)
     }
 
