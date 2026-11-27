@@ -89,6 +89,8 @@
     <!-- Zoom -->
     <string name="zoom_join">Zoom\'a katıl</string>
     <string name="zoom_join_short">Katıl</string>
+    <string name="zoom_preparing">Zoom hazırlanıyor…</string>
+    <string name="zoom_inapp_failed">Uygulama içinde açılamadı, Zoom uygulamasına geçiliyor.</string>
     <string name="zoom_open_failed">Zoom açılamadı. Telefonunuzda Zoom uygulaması kurulu mu?</string>
 
     <!-- Ayarlar -->
