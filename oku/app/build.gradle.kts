@@ -85,5 +85,20 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.webkit:webkit:1.11.0")
-    if (zoomSdk) add("okuImplementation", project(":mobilertc"))
+    if (zoomSdk) {
+        add("okuImplementation", project(":mobilertc"))
+        // Zoom toplantı ekranının istediği, SDK paketinde gelmeyen kütüphaneler
+        listOf(
+            "androidx.databinding:viewbinding:8.10.0",
+            "androidx.databinding:databinding-runtime:8.10.0",
+            "androidx.databinding:databinding-adapters:8.10.0",
+            "androidx.paging:paging-compose:3.3.5",
+            "androidx.compose.material:material-icons-core:1.7.8",
+            "androidx.biometric:biometric:1.1.0",
+            "androidx.credentials:credentials:1.5.0",
+            "io.coil-kt.coil3:coil:3.3.0",
+            "io.coil-kt.coil3:coil-svg:3.3.0",
+            "com.googlecode.libphonenumber:libphonenumber:8.13.52",
+        ).forEach { add("okuImplementation", it) }
+    }
 }
