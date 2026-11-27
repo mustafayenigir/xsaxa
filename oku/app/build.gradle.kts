@@ -28,7 +28,7 @@ android {
             buildConfigField("boolean", "ZOOM_SDK", zoomSdk.toString())
             if (zoomSdk) {
                 minSdk = 28 // Zoom Meeting SDK en az Android 9 ister
-                ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+                ndk { abiFilters += listOf("arm64-v8a") } // boyut: yalnızca 64-bit telefonlar (günümüzün neredeyse tümü)
             }
         }
         create("okut") {
