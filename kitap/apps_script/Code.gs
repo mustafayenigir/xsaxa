@@ -285,7 +285,8 @@ function home_(b) {
   const keys = [a.code];
   if (a.group) a.group.split(/[,;]+/).map(normCode_).filter(String).forEach(function (g) { keys.push(g); });
   const events = events_(keys, tz, EDU_PAST_DAYS, EDU_FUTURE_DAYS, false);
-  if (a.restricted) events.forEach(function (e) { e.zoom = ''; e.desc = stripLinks_(e.desc); });
+  // Göremez: eğitimin yalnızca adı, günü ve saati gider; metni ve Zoom linki gitmez
+  if (a.restricted) events.forEach(function (e) { e.zoom = ''; e.desc = ''; });
   const notices = notices_(keys, tz, today, false);
   if (a.restricted) notices.forEach(function (n) { n.msg = stripLinks_(n.msg); n.title = stripLinks_(n.title); });
   return {
@@ -574,6 +575,7 @@ function eduKey_(b) {
 function eduNote_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const k = eduKey_(b);
   const text = String(b.not || '').trim().slice(0, NOTE_MAX);
   if (!k || !text) return { ok: false, error: 'bad_request' };
@@ -585,6 +587,7 @@ function eduNote_(b) {
 function eduNoteDelete_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const k = eduKey_(b);
   const row = Math.floor(Number(b.row));
   if (!k || !(row >= 2)) return { ok: false, error: 'bad_request' };
@@ -599,6 +602,7 @@ function eduNoteDelete_(b) {
 function eduNotes_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const k = eduKey_(b);
   if (!k) return { ok: false, error: 'bad_request' };
   return eduNotesFor_(a.code, k);

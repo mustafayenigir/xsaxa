@@ -33,6 +33,10 @@ class EventPage(private val a: Activity, private val io: Executor) {
         val whenText = Format.dayLong(ev.date) + if (ev.start != null) "  ·  " + ev.timeText() else ""
         box.addView(Ui.chip(a, whenText), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
 
+        host.addView(scroll, FrameLayout.LayoutParams(-1, -1))
+        // "Göremez": eğitim metni, notlar ve Katıl düğmesi hiç gösterilmez
+        if (!access) return
+
         val text = ev.desc.trim()
         box.addView(Ui.text(a, if (text.isNotEmpty()) text else a.getString(R.string.edu_no_text), 17f,
             if (text.isNotEmpty()) Ui.color(a, R.color.on_background) else Ui.color(a, R.color.on_background_muted)).apply {
@@ -75,8 +79,6 @@ class EventPage(private val a: Activity, private val io: Executor) {
         list.addView(Ui.muted(a, a.getString(R.string.loading), 13f))
         send(JSONObject().put("action", "eduNotes"), ev) { r -> renderNotes(list, ev, r) }
 
-        host.addView(scroll, FrameLayout.LayoutParams(-1, -1))
-        if (!access) return // "Göremez": katılım bağlantısı gösterilmez
 
         // En altta sabit "Katıl"
         val bar = Ui.vbox(a).apply {
