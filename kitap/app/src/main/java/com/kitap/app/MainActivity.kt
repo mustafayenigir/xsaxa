@@ -182,6 +182,7 @@ class MainActivity : AppCompatActivity() {
         calendar = CalendarView(this) { openEvent(it) }
         calendarPage.addView(calendar)
         if (!admin) calendarPage.addView(com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton(this).apply {
+            id = R.id.planFab
             setText(R.string.plan_add)
             setIconResource(R.drawable.ic_add)
             setOnClickListener { openPlan(null) }
@@ -625,13 +626,17 @@ class MainActivity : AppCompatActivity() {
     private fun applyAccess() {
         if (admin) return
         bottomNav.menu.findItem(R.id.nav_kitap)?.isVisible = home.access
+        // Göremez: bildirimler ve kişisel notlar da tamamen gizli
+        bellBox.visibility = if (home.access) View.VISIBLE else View.GONE
+        calendarPage.findViewById<View>(R.id.planFab)?.visibility = if (home.access) View.VISIBLE else View.GONE
+        if (!home.access) { hideNotices(); Reminders.cancelAll(this) }
         if (menuAccess != home.access) { menuAccess = home.access; buildMenu() }
         if (!home.access && page == Page.KITAP) showPage(Page.HOME)
         if (!home.access && page == Page.SITE) showPage(Page.HOME)
     }
 
     private fun openPlan(p: Plan?) {
-        if (admin) return
+        if (admin || !home.access) return
         val date = if (page == Page.CALENDAR) calendar.focusDate else java.time.LocalDate.now()
         PlanDialog.show(this, io, p, if (p == null && date.isBefore(java.time.LocalDate.now())) java.time.LocalDate.now() else date, { plans ->
             home = home.withPlans(plans)
@@ -801,6 +806,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showNotices() {
         if (admin) return showPage(Page.NOTICES)
+        if (!home.access) return
         hideMenuPanel()
         notices.render(noticeList, home)
         val lp = noticePanel.layoutParams as FrameLayout.LayoutParams
@@ -901,7 +907,7 @@ class MainActivity : AppCompatActivity() {
             item(R.drawable.ic_home_light, getString(R.string.nav_home)) { showPage(Page.HOME) }
             item(R.drawable.ic_calendar_light, getString(R.string.nav_calendar)) { showPage(Page.CALENDAR) }
             item(R.drawable.ic_settings_light, getString(R.string.nav_settings)) { showPage(Page.SETTINGS) }
-            item(R.drawable.ic_bell, getString(R.string.notices)) { showNotices() }
+            if (home.access) item(R.drawable.ic_bell, getString(R.string.notices)) { showNotices() }
             item(R.drawable.ic_power, getString(R.string.menu_black)) { enterBlackMode() }
         }
         item(R.drawable.ic_lock, getString(R.string.menu_lock)) { lockApp() }

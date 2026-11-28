@@ -37,7 +37,7 @@ class HomePage(
         val today = LocalDate.now()
         eventSection(box, R.string.home_today, h.eventsOn(today), true)
         eventSection(box, R.string.home_tomorrow, h.eventsOn(today.plusDays(1)), false)
-        planSection(box, h)
+        if (h.access) planSection(box, h)
 
         // "Göremez" yapılmış kişide içerik linkleri hiç gösterilmez
         if (h.access) {

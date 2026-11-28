@@ -287,14 +287,13 @@ function home_(b) {
   const events = events_(keys, tz, EDU_PAST_DAYS, EDU_FUTURE_DAYS, false);
   // Göremez: eğitimin yalnızca adı, günü ve saati gider; metni ve Zoom linki gitmez
   if (a.restricted) events.forEach(function (e) { e.zoom = ''; e.desc = ''; });
-  const notices = notices_(keys, tz, today, false);
-  if (a.restricted) notices.forEach(function (n) { n.msg = stripLinks_(n.msg); n.title = stripLinks_(n.title); });
+  // Göremez: yalnızca eğitimlerin adı/günü/saati; içerik, bildirim ve kişisel notlar hiç gitmez
   return {
     ok: true, name: a.name, today: today, access: !a.restricted,
     links: a.restricted ? [] : links_(),
     events: events,
-    notices: notices,
-    plans: plansFor_(a.code).plans,
+    notices: a.restricted ? [] : notices_(keys, tz, today, false),
+    plans: a.restricted ? [] : plansFor_(a.code).plans,
   };
 }
 
@@ -649,6 +648,7 @@ function planCheck_(sh, row, code, at) {
 function planSave_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const date = String(b.date || '');
   const time = String(b.time || '');
   const text = String(b.not || '').trim().slice(0, NOTE_MAX);
@@ -668,6 +668,7 @@ function planSave_(b) {
 function planDelete_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const sh = sheet_(S_PLANS);
   const row = Math.floor(Number(b.row)) || 0;
   if (planCheck_(sh, row, a.code, b.at)) sh.deleteRow(row);

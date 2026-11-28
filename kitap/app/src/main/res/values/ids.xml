@@ -6,4 +6,5 @@
     <item name="nav_people" type="id" />
     <item name="nav_edu" type="id" />
     <item name="nav_notices" type="id" />
+    <item name="planFab" type="id" />
 </resources>
