@@ -21,7 +21,9 @@ data class Event(
     val key: String = "",
     val who: String = "",
     val zoomRaw: String = "",
-    val notes: Int = 0
+    val notes: Int = 0,
+    /** Kişinin kendi notu (takvimde farklı renkte gösterilir) */
+    val plan: Plan? = null
 ) {
     val startMin: Int get() = start?.let { it.hour * 60 + it.minute } ?: 0
     val endMin: Int
@@ -51,6 +53,21 @@ data class Event(
     }
 }
 
+/** Kişinin kendi notu / planı: "12:00 kitap okuyacağım". Hem kendisi hem yönetim görür. */
+data class Plan(val row: Int, val at: String, val date: LocalDate, val time: LocalTime?, val text: String) {
+    /** Hatırlatıcı için sabit numara */
+    val reqCode: Int get() = ("p" + row + at + date + time).hashCode()
+
+    fun asEvent() = Event("p$row", date, time, null, "📝 " + text, "", text, row = row, key = at, plan = this)
+
+    companion object {
+        fun parse(j: JSONObject): Plan? {
+            val d = runCatching { LocalDate.parse(j.optString("date")) }.getOrNull() ?: return null
+            return Plan(j.optInt("row"), j.optString("at"), d, Event.time(j.optString("time")), j.optString("not"))
+        }
+    }
+}
+
 data class Notice(val id: String, val date: String, val title: String, val msg: String,
                   val row: Int = 0, val key: String = "", val who: String = "", val until: String = "")
 
@@ -59,9 +76,15 @@ class HomeData(
     val name: String,
     val links: List<SiteLink>,
     val events: List<Event>,
-    val notices: List<Notice>
+    val notices: List<Notice>,
+    /** false: yönetim "Göremez" yaptı (Kur'an meali, içerik ve Zoom linkleri gizli) */
+    val access: Boolean = true,
+    val plans: List<Plan> = emptyList()
 ) {
     fun eventsOn(d: LocalDate) = events.filter { it.date == d }.sortedBy { if (it.start == null) -1 else it.startMin }
+    fun plansOn(d: LocalDate) = plans.filter { it.date == d }.sortedBy { it.time ?: LocalTime.MIN }
+    fun calendarItems(): List<Event> = events + plans.map { it.asEvent() }
+    fun withPlans(p: List<Plan>) = HomeData(name, links, events, notices, access, p)
 
     companion object {
         val EMPTY = HomeData("", emptyList(), emptyList(), emptyList())
@@ -76,7 +99,9 @@ class HomeData(
                         if (url.startsWith("https://", true)) SiteLink(j.optString("name").ifBlank { url }, url, j.optString("desc")) else null
                     },
                     list(o.optJSONArray("events")) { Event.parse(it) },
-                    list(o.optJSONArray("notices")) { notice(it) }
+                    list(o.optJSONArray("notices")) { notice(it) },
+                    o.optBoolean("access", true),
+                    list(o.optJSONArray("plans")) { Plan.parse(it) }
                 )
             } catch (_: Throwable) {
                 null
@@ -101,18 +126,18 @@ class HomeData(
 data class Person(
     val code: String, val name: String, val group: String, val pwd: String, val passive: Boolean, val registered: Boolean,
     val since: String, val last: String, val total: Long, val count: Int, val today: Long, val week: Long,
-    val read: Long, val notes: Int, val eduNotes: Int
+    val read: Long, val notes: Int, val eduNotes: Int, val restricted: Boolean
 ) {
     companion object {
         fun parse(j: JSONObject) = Person(
             j.optString("code"), j.optString("name"), j.optString("group"), j.optString("pwd"), j.optBoolean("passive"),
             j.optBoolean("registered"), j.optString("since"), j.optString("last"), j.optLong("total"), j.optInt("count"),
-            j.optLong("today"), j.optLong("week"), j.optLong("read"), j.optInt("notes"), j.optInt("eduNotes")
+            j.optLong("today"), j.optLong("week"), j.optLong("read"), j.optInt("notes"), j.optInt("eduNotes"), j.optBoolean("restricted")
         )
     }
 }
 
-class AdminData(val name: String, val people: List<Person>, val events: List<Event>, val notices: List<Notice>) {
+class AdminData(val name: String, val people: List<Person>, val events: List<Event>, val notices: List<Notice>, val crashCount: Int = 0) {
     companion object {
         val EMPTY = AdminData("", emptyList(), emptyList(), emptyList())
         fun parse(o: JSONObject?): AdminData? {
@@ -122,7 +147,8 @@ class AdminData(val name: String, val people: List<Person>, val events: List<Eve
                     o.optString("name"),
                     HomeData.list(o.optJSONArray("people")) { Person.parse(it) },
                     HomeData.list(o.optJSONArray("events")) { Event.parse(it) },
-                    HomeData.list(o.optJSONArray("notices")) { HomeData.notice(it) }
+                    HomeData.list(o.optJSONArray("notices")) { HomeData.notice(it) },
+                    o.optInt("crashCount")
                 )
             } catch (_: Throwable) {
                 null

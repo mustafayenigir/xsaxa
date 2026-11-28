@@ -65,3 +65,9 @@ jobs:
           }
           pub kitap-android Kitap.apk "Kitap Android (son surum)"
           pub yonetim-android UyeYonetim.apk "Uye Yonetim Android (son surum)"
+          # Uygulama ici "Guncelle" icin surum bilgisi (APK'lar yuklendikten SONRA)
+          n=$(( GITHUB_RUN_NUMBER > 2 ? GITHUB_RUN_NUMBER : 2 ))
+          printf '{"code":%d,"name":"1.%s","kitap":"https://github.com/%s/releases/download/kitap-android/Kitap.apk","yonetim":"https://github.com/%s/releases/download/yonetim-android/UyeYonetim.apk"}\n' \
+            "$n" "$GITHUB_RUN_NUMBER" "$GITHUB_REPOSITORY" "$GITHUB_REPOSITORY" > version.json
+          cat version.json
+          gh release upload kitap-android version.json --clobber

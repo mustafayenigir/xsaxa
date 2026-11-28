@@ -12,8 +12,10 @@ android {
     defaultConfig {
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        // Her derlemede sürüm artar; uygulama içi "Güncelle" bunu karşılaştırır
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = maxOf(run, 2)
+        versionName = "1.$run"
     }
 
     // Aynı kod iki uygulama: Kitap (herkes) ve Üye Yönetim (yönetim)

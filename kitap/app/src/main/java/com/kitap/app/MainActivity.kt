@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private enum class Step { CODE, NEW_PASSWORD, OLD_PASSWORD, ENTER }
-    enum class Page { KITAP, HOME, SITE, CALENDAR, SETTINGS, EVENT, PEOPLE, PERSON, EDU, NOTICES }
+    enum class Page { KITAP, HOME, SITE, CALENDAR, SETTINGS, EVENT, PEOPLE, PERSON, EDU, NOTICES, ERRORS }
 
     private val admin = BuildConfig.ADMIN
     private val firstPage get() = if (admin) Page.PEOPLE else Page.HOME
@@ -176,15 +176,24 @@ class MainActivity : AppCompatActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_main)
         bind()
-        CrashReport.showIfAny(this)
+        // Önceki çökme varsa kişiye gösterme; sessizce yöneticilere gönder
+        io.execute { CrashReport.sendPending(applicationContext) }
 
         calendar = CalendarView(this) { openEvent(it) }
         calendarPage.addView(calendar)
-        homeView = HomePage(this, { openSite(it) }, { openEvent(it) })
-        settingsView = SettingsPage(this, { applySettings() }, { recreate() }, { lockApp() }, { bioAvailable() }) { on, done -> toggleBiometric(on, done) }
+        if (!admin) calendarPage.addView(com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton(this).apply {
+            setText(R.string.plan_add)
+            setIconResource(R.drawable.ic_add)
+            setOnClickListener { openPlan(null) }
+        }, FrameLayout.LayoutParams(-2, -2, android.view.Gravity.BOTTOM or android.view.Gravity.END).apply {
+            setMargins(0, 0, Ui.dp(this@MainActivity, 16), Ui.dp(this@MainActivity, 16))
+        })
+        homeView = HomePage(this, { openSite(it) }, { openEvent(it) }, { openPlan(it) })
+        settingsView = SettingsPage(this, { applySettings() }, { recreate() }, { lockApp() }, { bioAvailable() },
+            { on, done -> toggleBiometric(on, done) }) { Updater.check(this, io, manual = true) }
         notices = Notices(this, { hideNotices(); openEvent(it) }) { updateBadge() }
         eventView = EventPage(this, io)
-        adminView = AdminPages(this, io, { refresh(silent = true, force = true) }, { showPerson(it) }) { sessionRejected() }
+        adminView = AdminPages(this, io, { refresh(silent = true, force = true) }, { showPerson(it) }, { showPage(Page.ERRORS) }) { sessionRejected() }
 
         setupLock()
         setupShell()
@@ -256,7 +265,7 @@ class MainActivity : AppCompatActivity() {
                     .setTitle(R.string.forgot_title)
                     .setMessage(R.string.forgot_text)
                     .setPositiveButton(R.string.ok, null)
-                    .setNeutralButton(R.string.other_code) { _, _ -> Account.reset(this); AppSettings.setBiometric(this, false); showStep(Step.CODE) }
+                    .setNeutralButton(R.string.other_code) { _, _ -> Reminders.cancelAll(this); Account.reset(this); AppSettings.setBiometric(this, false); showStep(Step.CODE) }
                     .create())
                 Step.NEW_PASSWORD -> { Account.reset(this); showStep(Step.CODE) }
                 Step.CODE -> Unit
@@ -522,6 +531,8 @@ class MainActivity : AppCompatActivity() {
         refresh(silent = false)
         ui.removeCallbacks(autoRefresh)
         ui.postDelayed(autoRefresh, REFRESH_MS)
+        if (!admin) Reminders.schedule(this, home.plans)
+        ui.postDelayed({ if (unlocked) Updater.check(this, io, manual = false) }, 2500)
     }
 
     private fun lockApp(message: String? = null) {
@@ -578,6 +589,7 @@ class MainActivity : AppCompatActivity() {
             if (data != null) {
                 home = data
                 renderAll()
+                Reminders.schedule(this, data.plans)
             } else {
                 renderHome()
                 if (err == "auth") sessionRejected()
@@ -597,14 +609,36 @@ class MainActivity : AppCompatActivity() {
             if (page == Page.SETTINGS) settingsView.render(settingsContent)
             return
         }
+        applyAccess()
         renderHome()
-        calendar.setEvents(home.events)
+        calendar.setEvents(home.calendarItems())
         if (page == Page.SETTINGS) settingsView.render(settingsContent)
         if (noticePanel.visibility == View.VISIBLE) notices.render(noticeList, home)
         updateBadge()
     }
 
     private fun renderHome() = homeView.render(homeContent, home, loading)
+
+    private var menuAccess: Boolean? = null
+
+    /** "Göremez" yapılan kişide Kitap (Kur'an meali) sekmesi ve linkler hiç görünmez. */
+    private fun applyAccess() {
+        if (admin) return
+        bottomNav.menu.findItem(R.id.nav_kitap)?.isVisible = home.access
+        if (menuAccess != home.access) { menuAccess = home.access; buildMenu() }
+        if (!home.access && page == Page.KITAP) showPage(Page.HOME)
+        if (!home.access && page == Page.SITE) showPage(Page.HOME)
+    }
+
+    private fun openPlan(p: Plan?) {
+        if (admin) return
+        val date = if (page == Page.CALENDAR) calendar.focusDate else java.time.LocalDate.now()
+        PlanDialog.show(this, io, p, if (p == null && date.isBefore(java.time.LocalDate.now())) java.time.LocalDate.now() else date, { plans ->
+            home = home.withPlans(plans)
+            renderAll()
+            Reminders.schedule(this, plans)
+        }) { sessionRejected() }
+    }
 
     private fun updateBadge() {
         if (admin) return
@@ -662,7 +696,7 @@ class MainActivity : AppCompatActivity() {
         Page.EVENT -> if (eventReturn == Page.CALENDAR) R.id.nav_calendar else R.id.nav_home
         Page.CALENDAR -> R.id.nav_calendar
         Page.SETTINGS -> R.id.nav_settings
-        Page.PEOPLE, Page.PERSON -> R.id.nav_people
+        Page.PEOPLE, Page.PERSON, Page.ERRORS -> R.id.nav_people
         Page.EDU -> R.id.nav_edu
         Page.NOTICES -> R.id.nav_notices
     }
@@ -678,6 +712,7 @@ class MainActivity : AppCompatActivity() {
         Page.PERSON -> getString(R.string.adm_person_title)
         Page.EDU -> getString(R.string.nav_edu)
         Page.NOTICES -> getString(R.string.notices)
+        Page.ERRORS -> getString(R.string.adm_crashes)
     }
 
     private fun showPage(p: Page, fromNav: Boolean = false) {
@@ -691,11 +726,11 @@ class MainActivity : AppCompatActivity() {
         webView.visibility = if (p == Page.SITE) View.VISIBLE else View.GONE
         calendarPage.visibility = if (p == Page.CALENDAR) View.VISIBLE else View.GONE
         settingsPage.visibility = if (p == Page.SETTINGS) View.VISIBLE else View.GONE
-        val extra = p == Page.EVENT || p == Page.PEOPLE || p == Page.PERSON || p == Page.EDU || p == Page.NOTICES
+        val extra = p == Page.EVENT || p == Page.PEOPLE || p == Page.PERSON || p == Page.EDU || p == Page.NOTICES || p == Page.ERRORS
         extraPage.visibility = if (extra) View.VISIBLE else View.GONE
         if (wasKitap != (p == Page.KITAP)) kitap?.setVisible(p == Page.KITAP)
         topTitle.text = titleFor(p)
-        backButton.visibility = if (p == Page.EVENT || p == Page.PERSON) View.VISIBLE else View.GONE
+        backButton.visibility = if (p == Page.EVENT || p == Page.PERSON || p == Page.ERRORS) View.VISIBLE else View.GONE
         if (!fromNav) {
             val id = navIdFor(p)
             bottomNav.menu.findItem(id)?.let { if (bottomNav.selectedItemId != id) it.isChecked = true }
@@ -710,6 +745,7 @@ class MainActivity : AppCompatActivity() {
             Page.PEOPLE -> adminView.renderPeople(extraPage)
             Page.EDU -> adminView.renderEvents(extraPage)
             Page.NOTICES -> adminView.renderNotices(extraPage)
+            Page.ERRORS -> adminView.renderCrashes(extraPage)
             else -> Unit
         }
         applyMode()
@@ -732,22 +768,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openEvent(ev: Event) {
+        ev.plan?.let { return openPlan(it) }
         if (page != Page.EVENT) eventReturn = if (page == Page.CALENDAR) Page.CALENDAR else Page.HOME
         savedEvent = ev
         showPage(Page.EVENT)
-        eventView.render(extraPage, ev)
+        eventView.render(extraPage, ev, home.access)
     }
 
     private fun showMoreMenu(anchor: View) {
         val pm = PopupMenu(this, anchor)
         pm.menu.add(0, 1, 0, R.string.refresh)
         if (!admin) pm.menu.add(0, 2, 1, R.string.menu_black)
+        if (admin) pm.menu.add(0, 4, 1, getString(R.string.adm_crashes) + if (adminView.data.crashCount > 0) " (${adminView.data.crashCount})" else "")
         pm.menu.add(0, 3, 2, R.string.menu_lock)
         pm.setOnMenuItemClickListener {
             when (it.itemId) {
                 1 -> refresh(silent = false)
                 2 -> enterBlackMode()
                 3 -> lockApp()
+                4 -> showPage(Page.ERRORS)
             }
             true
         }
@@ -838,7 +877,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         menuScrim.setOnClickListener { hideMenuPanel() }
-        // Menü maddeleri
+        buildMenu()
+    }
+
+    /** Havada duran düğmenin menüsü. */
+    private fun buildMenu() {
+        menuPanel.removeAllViews()
         fun item(icon: Int, text: String, click: () -> Unit) {
             val v = layoutInflater.inflate(R.layout.panel_item, menuPanel, false) as TextView
             v.text = text
@@ -851,8 +895,9 @@ class MainActivity : AppCompatActivity() {
             item(R.drawable.ic_calendar_light, getString(R.string.nav_edu)) { showPage(Page.EDU) }
             item(R.drawable.ic_bell, getString(R.string.notices)) { showPage(Page.NOTICES) }
             item(R.drawable.ic_settings_light, getString(R.string.nav_settings)) { showPage(Page.SETTINGS) }
+            item(R.drawable.ic_bell, getString(R.string.adm_crashes)) { showPage(Page.ERRORS) }
         } else {
-            item(R.drawable.ic_book_light, getString(R.string.nav_kitap)) { showPage(Page.KITAP) }
+            if (home.access) item(R.drawable.ic_book_light, getString(R.string.nav_kitap)) { showPage(Page.KITAP) }
             item(R.drawable.ic_home_light, getString(R.string.nav_home)) { showPage(Page.HOME) }
             item(R.drawable.ic_calendar_light, getString(R.string.nav_calendar)) { showPage(Page.CALENDAR) }
             item(R.drawable.ic_settings_light, getString(R.string.nav_settings)) { showPage(Page.SETTINGS) }
@@ -1119,6 +1164,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         KitapApp.blockAudioCapture(this)
+        if (Updater.hasPendingInstall()) Updater.install(this)
         if (unlocked) {
             applySettings()
             webView.onResume()

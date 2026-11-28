@@ -21,7 +21,8 @@ class SettingsPage(
     private val fontChanged: () -> Unit,
     private val lock: () -> Unit,
     private val biometricAvailable: () -> Boolean,
-    private val setBiometric: (Boolean, (Boolean) -> Unit) -> Unit
+    private val setBiometric: (Boolean, (Boolean) -> Unit) -> Unit,
+    private val checkUpdate: () -> Unit
 ) {
     private fun dp(v: Int) = Ui.dp(c, v)
 
@@ -39,6 +40,14 @@ class SettingsPage(
             setOnClickListener { lock() }
         }, Ui.matchWrap(10, c))
         box.addView(acc, Ui.matchWrap())
+
+        // Güncelleme
+        box.addView(Ui.section(c, c.getString(R.string.set_update)))
+        box.addView(Ui.muted(c, c.getString(R.string.upd_version, BuildConfig.VERSION_NAME), 14f))
+        box.addView(MaterialButton(c).apply {
+            setText(R.string.upd_check)
+            setOnClickListener { checkUpdate() }
+        }, Ui.matchWrap(8, c))
 
         // Parmak izi
         box.addView(Ui.section(c, c.getString(R.string.set_biometric)))

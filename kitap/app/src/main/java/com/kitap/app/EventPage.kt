@@ -22,7 +22,7 @@ class EventPage(private val a: Activity, private val io: Executor) {
     private fun dp(v: Int) = Ui.dp(a, v)
     private var shown: Event? = null
 
-    fun render(host: FrameLayout, ev: Event) {
+    fun render(host: FrameLayout, ev: Event, access: Boolean = true) {
         shown = ev
         host.removeAllViews()
         val scroll = ScrollView(a).apply { isFillViewport = true }
@@ -76,6 +76,7 @@ class EventPage(private val a: Activity, private val io: Executor) {
         send(JSONObject().put("action", "eduNotes"), ev) { r -> renderNotes(list, ev, r) }
 
         host.addView(scroll, FrameLayout.LayoutParams(-1, -1))
+        if (!access) return // "Göremez": katılım bağlantısı gösterilmez
 
         // En altta sabit "Katıl"
         val bar = Ui.vbox(a).apply {

@@ -38,6 +38,12 @@ class CalendarView(context: Context, private val onEvent: (Event) -> Unit) : Lin
     private val ids = intArrayOf(View.generateViewId(), View.generateViewId(), View.generateViewId())
 
     private val primary = Ui.color(context, R.color.primary)
+    /** Kişisel notlar turuncu, eğitimler tema renginde */
+    private val planColor = 0xFFE08600.toInt()
+    private fun colorOf(ev: Event) = if (ev.plan != null) planColor else primary
+
+    /** Takvimde şu an bakılan gün (yeni not eklerken varsayılan tarih). */
+    val focusDate: LocalDate get() = focus
     private val fg = Ui.color(context, R.color.on_background)
     private val muted = Ui.color(context, R.color.on_background_muted)
     private val outline = Ui.color(context, R.color.outline)
@@ -185,8 +191,8 @@ class CalendarView(context: Context, private val onEvent: (Event) -> Unit) : Lin
         }
         cell.addView(num, LayoutParams(dp(34), dp(34)))
         val dots = Ui.hbox(context).apply { gravity = Gravity.CENTER }
-        list.take(3).forEach { _ ->
-            dots.addView(View(context).apply { background = Ui.circle(if (inMonth) primary else Ui.withAlpha(primary, 110)) },
+        list.take(3).forEach { ev ->
+            dots.addView(View(context).apply { background = Ui.circle(if (inMonth) colorOf(ev) else Ui.withAlpha(colorOf(ev), 110)) },
                 LayoutParams(dp(6), dp(6)).apply { marginStart = dp(1); marginEnd = dp(1); topMargin = dp(3) })
         }
         if (list.size > 3) dots.addView(Ui.muted(context, "+", 10f))
@@ -248,7 +254,7 @@ class CalendarView(context: Context, private val onEvent: (Event) -> Unit) : Lin
     ).apply {
         maxLines = 2
         ellipsize = TextUtils.TruncateAt.END
-        background = Ui.rounded(context, Ui.withAlpha(primary, 34), 10)
+        background = Ui.rounded(context, Ui.withAlpha(colorOf(ev), 40), 10)
         setPadding(dp(10), dp(6), dp(10), dp(6))
         setOnClickListener { onEvent(ev) }
     }
@@ -275,7 +281,7 @@ class CalendarView(context: Context, private val onEvent: (Event) -> Unit) : Lin
         val placed = layoutColumns(timed)
         placed.forEach { (ev, col, cols) ->
             val v = Ui.text(context, ev.timeText() + "  " + ev.title + if (ev.zoom.isNotEmpty()) "  🎥" else "", 12f, 0xFFFFFFFF.toInt(), true).apply {
-                background = Ui.rounded(context, primary, 8)
+                background = Ui.rounded(context, colorOf(ev), 8)
                 setPadding(dp(6), dp(2), dp(6), dp(2))
                 ellipsize = TextUtils.TruncateAt.END
                 contentDescription = ev.timeText() + " " + ev.title

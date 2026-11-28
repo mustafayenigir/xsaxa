@@ -94,7 +94,7 @@
     <string name="edu_has_zoom">🎥 Zoom</string>
     <string name="edu_no_text">Bu eğitim için açıklama yazılmamış.</string>
     <string name="edu_notes">Eğitim notlarım</string>
-    <string name="edu_notes_info">Eğitim hakkındaki notunuzu yazın. Notunuzu yalnızca siz ve yönetim görür.</string>
+    <string name="edu_notes_info">Eğitim hakkındaki notunuzu yazın. Notlarınıza daha sonra dönebilirsiniz.</string>
     <string name="edu_note_hint">Notunuz…</string>
     <string name="edu_note_save">Notu kaydet</string>
     <string name="edu_note_saved">Not kaydedildi</string>
@@ -245,4 +245,47 @@
     <string name="adm_expired">Süresi doldu</string>
     <string name="adm_future">İleri tarihli</string>
     <string name="adm_delete_notice_q">"%1$s" bildirimi silinsin mi?</string>
+
+    <!-- Kişisel notlar -->
+    <string name="plan_section">Notlarım</string>
+    <string name="plan_empty">Henüz notunuz yok. "Saat 12:00\'de kitap okuyacağım" gibi bir not ekleyebilirsiniz; saati gelince hatırlatılır.</string>
+    <string name="plan_add">+ Not ekle</string>
+    <string name="plan_edit">Notu düzenle</string>
+    <string name="plan_info">Gün ve saat seçin; saati gelince telefonunuza hatırlatma gelir.</string>
+    <string name="plan_text">Notunuz</string>
+    <string name="plan_hint">Ör. Kitap okuyacağım 📖</string>
+    <string name="plan_no_time">Saat yok (09:00\'da hatırlatılır)</string>
+    <string name="plan_clear_time">Saati kaldır</string>
+    <string name="plan_err_empty">Notunuzu yazın.</string>
+    <string name="plan_saved">Not kaydedildi</string>
+    <string name="reminder_channel">Hatırlatıcılar</string>
+    <string name="reminder_title">📝 Notunuz</string>
+
+    <!-- Güncelleme -->
+    <string name="set_update">Uygulama</string>
+    <string name="upd_version">Sürüm %1$s</string>
+    <string name="upd_check">Güncellemeleri denetle</string>
+    <string name="upd_checking">Güncelleme denetleniyor…</string>
+    <string name="upd_none">Uygulamanız güncel (sürüm %1$s).</string>
+    <string name="upd_title">Güncelleme mevcut</string>
+    <string name="upd_text">Yeni sürüm hazır (%1$s → %2$s). "Güncelle"ye basın; yeni sürüm iner ve kurulum ekranında "Güncelle" demeniz yeterli. Bilgileriniz silinmez.</string>
+    <string name="upd_button">Güncelle</string>
+    <string name="upd_downloading">Güncelleme indiriliyor…</string>
+    <string name="upd_failed">Güncelleme indirilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="upd_perm_title">Bir kerelik izin</string>
+    <string name="upd_perm_text">Güncellemeyi kurabilmek için bu uygulamaya "uygulama yükleme" izni verin. Açılan ekranda izni açıp geri dönün; kurulum kendiliğinden başlar.</string>
+    <string name="upd_perm_button">İzin ekranını aç</string>
+
+    <!-- Yönetim: erişim ve hata raporları -->
+    <string name="adm_access">Kur\'an meali, eğitim ve içerik linklerini görebilir</string>
+    <string name="adm_access_desc">Kapalıyken (Göremez) kişi Kur\'an mealini, içerikleri ve Zoom linklerini hiçbir şekilde göremez.</string>
+    <string name="adm_access_on">Görebilir yapıldı</string>
+    <string name="adm_access_off">Göremez yapıldı</string>
+    <string name="adm_restricted">Göremez</string>
+    <string name="adm_s_plans">Kişisel notları</string>
+    <string name="adm_s_plans_empty">Kişisel not yok.</string>
+    <string name="adm_crashes">Hata raporları</string>
+    <string name="adm_crash_banner">⚠ Son 7 günde %1$d hata raporu var. Görmek için dokunun.</string>
+    <string name="adm_crash_info">Uygulama bir kişinin telefonunda çökerse rapor buraya düşer (kişiye gösterilmez). Ayrıntı için rapora dokunun.</string>
+    <string name="adm_crash_empty">Hata raporu yok. 👍</string>
 </resources>

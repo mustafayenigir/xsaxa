@@ -276,7 +276,7 @@
     if (!hedefAyet) yerelYaz('son_ayet', 1);
     sunucu({ action: 'kuran', sure: no }).then(function (d) {
       if (benim !== acmaNo) return;
-      if (!d || !d.ok) throw new Error(d && d.error === 'auth' ? 'oturum' : 'sunucu');
+      if (!d || !d.ok) throw new Error(d && d.error === 'auth' ? 'oturum' : (d && d.error === 'restricted' ? 'kapali' : 'sunucu'));
       ayetMetinleri = (d.ayetler || []).map(function (a) { return [parseInt(a[0], 10), String(a[1])]; });
       if (!ayetMetinleri.length) { durumYaz('Bu surenin metni Excel\'deki "Kuran" sayfasında bulunamadı.', true); return; }
       kayitlariAl(d.kayitlar);
@@ -289,6 +289,7 @@
       if (hedefAyet > 0) { var s = satir(hedefAyet); if (s) s.scrollIntoView({ block: 'start' }); }
     }).catch(function (err) {
       if (benim !== acmaNo) return;
+      if (err.message === 'kapali') { durumYaz('Bu bölüm şu an kullanımınıza kapalı.', true); return; }
       durumYaz(err.message === 'oturum' ? 'Oturum doğrulanamadı. Uygulamayı kilitleyip yeniden giriş yapın.'
         : 'Sure yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.', true, function () { sureAc(no, hedefAyet); });
     });

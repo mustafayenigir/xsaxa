@@ -19,7 +19,8 @@ import java.time.LocalDate
 class HomePage(
     private val c: Context,
     private val openSite: (SiteLink) -> Unit,
-    private val openEvent: (Event) -> Unit
+    private val openEvent: (Event) -> Unit,
+    private val openPlan: (Plan?) -> Unit
 ) {
     private val palette = intArrayOf(0xFF0B6B3A.toInt(), 0xFF1E6FD9.toInt(), 0xFF8E44EC.toInt(), 0xFF138A57.toInt(), 0xFFE08600.toInt(), 0xFFD9480F.toInt(), 0xFF0E7C86.toInt(), 0xFF6D4C41.toInt())
     private fun dp(v: Int) = Ui.dp(c, v)
@@ -36,9 +37,43 @@ class HomePage(
         val today = LocalDate.now()
         eventSection(box, R.string.home_today, h.eventsOn(today), true)
         eventSection(box, R.string.home_tomorrow, h.eventsOn(today.plusDays(1)), false)
+        planSection(box, h)
 
-        box.addView(Ui.section(c, c.getString(R.string.home_sites)))
-        if (h.links.isEmpty()) box.addView(empty(R.string.home_sites_empty)) else box.addView(siteGrid(h.links), Ui.matchWrap())
+        // "Göremez" yapılmış kişide içerik linkleri hiç gösterilmez
+        if (h.access) {
+            box.addView(Ui.section(c, c.getString(R.string.home_sites)))
+            if (h.links.isEmpty()) box.addView(empty(R.string.home_sites_empty)) else box.addView(siteGrid(h.links), Ui.matchWrap())
+        }
+    }
+
+    // ------------------------------------------------------------ kişisel notlar
+
+    private fun planSection(box: LinearLayout, h: HomeData) {
+        box.addView(Ui.section(c, c.getString(R.string.plan_section)))
+        val today = LocalDate.now()
+        val list = h.plans.filter { !it.date.isBefore(today) }.sortedWith(compareBy({ it.date }, { it.time ?: java.time.LocalTime.MIN })).take(8)
+        val amber = 0xFFE08600.toInt()
+        if (list.isEmpty()) box.addView(Ui.muted(c, c.getString(R.string.plan_empty), 14f).apply {
+            background = Ui.card(c); setPadding(dp(16), dp(14), dp(16), dp(14))
+        }, Ui.matchWrap())
+        list.forEach { p ->
+            val row = Ui.hbox(c).apply {
+                setPadding(dp(14), dp(10), dp(12), dp(10))
+                background = Ui.rounded(c, Ui.withAlpha(amber, 28), 16, Ui.withAlpha(amber, 120), 1)
+                isClickable = true
+                setOnClickListener { openPlan(p) }
+            }
+            val col = Ui.vbox(c)
+            col.addView(Ui.text(c, Format.relDay(p.date, today) + (p.time?.let { "  ·  " + Format.time(it) } ?: ""), 13f, amber, true))
+            col.addView(Ui.text(c, p.text, 15f).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END }, Ui.matchWrap(2, c))
+            row.addView(Ui.text(c, "📝", 20f), LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(10) })
+            row.addView(col, Ui.weight1())
+            box.addView(row, Ui.matchWrap().apply { bottomMargin = dp(8) })
+        }
+        box.addView(com.google.android.material.button.MaterialButton(c, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            setText(R.string.plan_add)
+            setOnClickListener { openPlan(null) }
+        }, Ui.matchWrap(2, c))
     }
 
     private fun empty(res: Int) = Ui.muted(c, c.getString(res), 14f).apply {

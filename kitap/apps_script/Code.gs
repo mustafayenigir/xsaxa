@@ -10,6 +10,7 @@
  *  SİZİN DOLDURDUKLARINIZ
  *  "Kişiler"       A: Yetki kodu | B: Ad Soyad | C: Grup (isteğe bağlı) | D: Şifre | E: Durum (Aktif / Pasif)
  *                  F: Cihaz | G: Kayıt | H: Son giriş | I: Toplam süre | J: Giriş sayısı   (F–J uygulama yazar)
+ *                  K: Erişim (Görebilir / Göremez) — Göremez: Kur'an meali, içerik ve Zoom linkleri gizlenir
  *  "Yöneticiler"   Kişiler ile aynı sütunlar; Üye Yönetim uygulamasına girebilecek kişiler.
  *  "İçerikler"     A: Ad | B: Link (https://...) | C: Açıklama
  *  "Eğitimler"     A: Tarih | B: Başlangıç | C: Bitiş | D: Eğitim adı | E: Zoom linki |
@@ -23,6 +24,8 @@
  *  "Eğitim Notları" A: Tarih-saat | B: Kod | C: Ad | D: Eğitim tarihi | E: Eğitim | F: Not
  *  "Giriş Kayıtları" A: Tarih-saat | B: Kod | C: Ad | D: Uygulama | E: Olay
  *  "Günlük Süre"    A: Tarih | B: Kod | C: Ad | D: Süre | E: Saniye
+ *  "Kişisel Notlar" A: Kod | B: Ad | C: Tarih | D: Saat | E: Not | F: Yazıldı   (kişinin kendi planları/hatırlatıcıları)
+ *  "Hata Raporları" A: Tarih-saat | B: Uygulama | C: Kod | D: Ad | E: Sürüm | F: Cihaz | G: Rapor
  *
  * Şifreler "Kişiler" sayfasının D sütununda AÇIK yazar (şifremi unuttum yok; siz söylersiniz).
  * Şifreyi değiştirirseniz kişi bir sonraki açılışta yeni şifreyle girer.
@@ -41,10 +44,12 @@ const S_QREAD = 'Kitap Okuma';
 const S_ENOTES = 'Eğitim Notları';
 const S_LOG = 'Giriş Kayıtları';
 const S_DAILY = 'Günlük Süre';
+const S_PLANS = 'Kişisel Notlar';
+const S_CRASH = 'Hata Raporları';
 
 // Kişiler / Yöneticiler sütunları
-const C_CODE = 1, C_NAME = 2, C_GROUP = 3, C_PWD = 4, C_STATUS = 5, C_DEVICE = 6, C_SINCE = 7, C_LAST = 8, C_TOTAL = 9, C_COUNT = 10;
-const P_COLS = 10;
+const C_CODE = 1, C_NAME = 2, C_GROUP = 3, C_PWD = 4, C_STATUS = 5, C_DEVICE = 6, C_SINCE = 7, C_LAST = 8, C_TOTAL = 9, C_COUNT = 10, C_ACCESS = 11;
+const P_COLS = 11;
 
 const TZ = 'Europe/Istanbul';
 const MAX_SECONDS_PER_CALL = 7200;
@@ -72,7 +77,7 @@ function doGet() {
   }
 }
 
-const READ_ONLY = { home: 1, kuran: 1, eduNotes: 1, adminData: 1, person: 1, eventNotes: 1, check: 1 };
+const READ_ONLY = { home: 1, kuran: 1, eduNotes: 1, adminData: 1, person: 1, eventNotes: 1, check: 1, crashes: 1 };
 
 function doPost(e) {
   let b;
@@ -113,6 +118,9 @@ function route_(action, b) {
     case 'eduNote': return eduNote_(b);
     case 'eduNoteDelete': return eduNoteDelete_(b);
     case 'eduNotes': return eduNotes_(b);
+    case 'planSave': return planSave_(b);
+    case 'planDelete': return planDelete_(b);
+    case 'crash': return crash_(b);
     // Üye Yönetim uygulaması
     case 'adminData': return adminData_(b);
     case 'person': return personDetail_(b);
@@ -122,6 +130,8 @@ function route_(action, b) {
     case 'eventNotes': return eventNotes_(b);
     case 'noticeSave': return noticeSave_(b);
     case 'noticeDelete': return noticeDelete_(b);
+    case 'access': return access_(b);
+    case 'crashes': return crashes_(b);
     default: return { ok: false, error: 'bad_request' };
   }
 }
@@ -137,7 +147,14 @@ function readPerson_(sh, row) {
   return {
     row: row, code: normCode_(v[0]), name: String(v[1]).trim(), group: String(v[2]).trim(), pwd: String(v[3]),
     passive: isPassive_(v[4]), device: String(v[5]).trim(), since: v[6], last: v[7], total: parseDur_(v[8]), count: Number(v[9]) || 0,
+    restricted: isRestricted_(v[10]),
   };
+}
+
+/** "Göremez" (ya da Hayır/Kapalı) yazıyorsa Kur'an meali ve linkler gizlenir. */
+function isRestricted_(s) {
+  const t = normCode_(s).replace(/Ö/g, 'O');
+  return t === 'GOREMEZ' || t === 'HAYIR' || t === 'KAPALI' || t === 'YOK';
 }
 
 function isPassive_(s) {
@@ -218,7 +235,7 @@ function auth_(b) {
   if (!row) return null;
   const p = readPerson_(sh, row);
   if (p.passive || p.device !== uuid || p.pwd !== pwd) return null;
-  return { sh: sh, row: row, code: code, name: p.name, group: p.group, admin: isAdminApp_(b) };
+  return { sh: sh, row: row, code: code, name: p.name, group: p.group, admin: isAdminApp_(b), restricted: !isAdminApp_(b) && p.restricted };
 }
 
 function adminAuth_(b) {
@@ -267,12 +284,22 @@ function home_(b) {
   const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
   const keys = [a.code];
   if (a.group) a.group.split(/[,;]+/).map(normCode_).filter(String).forEach(function (g) { keys.push(g); });
+  const events = events_(keys, tz, EDU_PAST_DAYS, EDU_FUTURE_DAYS, false);
+  if (a.restricted) events.forEach(function (e) { e.zoom = ''; e.desc = stripLinks_(e.desc); });
+  const notices = notices_(keys, tz, today, false);
+  if (a.restricted) notices.forEach(function (n) { n.msg = stripLinks_(n.msg); n.title = stripLinks_(n.title); });
   return {
-    ok: true, name: a.name, today: today,
-    links: links_(),
-    events: events_(keys, tz, EDU_PAST_DAYS, EDU_FUTURE_DAYS, false),
-    notices: notices_(keys, tz, today, false),
+    ok: true, name: a.name, today: today, access: !a.restricted,
+    links: a.restricted ? [] : links_(),
+    events: events,
+    notices: notices,
+    plans: plansFor_(a.code).plans,
   };
+}
+
+/** Göremez durumundaki kişiden metin içindeki bağlantıları gizler. */
+function stripLinks_(t) {
+  return String(t || '').replace(/(https?:\/\/|www\.)\S+/gi, '').replace(/[ \t]+\n/g, '\n').trim();
 }
 
 function links_() {
@@ -376,7 +403,7 @@ function quranIndex_(force) {
 
 function quranAyets_(sure) {
   const cache = CacheService.getScriptCache();
-  const ck = 'ks' + sure;
+  const ck = 'q2s' + sure;
   const parts = Number(cache.get(ck + 'n') || 0);
   if (parts > 0) {
     const got = cache.getAll(Array.from({ length: parts }, function (_, i) { return ck + '_' + i; }));
@@ -398,7 +425,7 @@ function quranAyets_(sure) {
   rows.forEach(function (r) {
     if (Number(r[0]) !== sure) return;
     const no = Number(r[1]);
-    const text = String(r[2] == null ? '' : r[2]).replace(/\s+/g, ' ').trim();
+    const text = cleanMeal_(r[2]);
     if (no > 0 && text) out.push([no, text]);
   });
   out.sort(function (x, y) { return x[0] - y[0]; });
@@ -415,9 +442,24 @@ function quranAyets_(sure) {
   return out;
 }
 
+/**
+ * Meal metnindeki dipnot ve ayet-aralığı işaretlerini kaldırır (Excel'e dokunmadan):
+ *   "Hamd[4], Âlemlerin Rabbi[5]"  → "Hamd, Âlemlerin Rabbi"
+ *   "2,3,4. Hamd..." / "6,7. Bizi..." → "Hamd..." / "Bizi..."
+ */
+function cleanMeal_(v) {
+  return String(v == null ? '' : v)
+    .replace(/\[\s*\d+(?:\s*[,\-–]\s*\d+)*\s*\]/g, '')
+    .replace(/^\s*\d+(?:\s*[,\-–]\s*\d+)*\s*[.)]\s*/, '')
+    .replace(/\s+([.,;:!?’”)])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function kuran_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const sure = Math.floor(Number(b.sure));
   if (!(sure >= 1 && sure <= 114)) return { ok: false, error: 'bad_request' };
   const ayetler = quranAyets_(sure);
@@ -476,6 +518,7 @@ function updateMarks_(a, sure, ayetler, fn) {
 function mark_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const sure = Math.floor(Number(b.sure));
   const renk = Math.floor(Number(b.renk)) || 0;
   const ayetler = ayetList_(b.ayetler);
@@ -486,6 +529,7 @@ function mark_(b) {
 function note_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const sure = Math.floor(Number(b.sure));
   const ayetler = ayetList_(b.ayetler);
   const text = String(b.not == null ? '' : b.not).trim().slice(0, NOTE_MAX);
@@ -497,6 +541,7 @@ function note_(b) {
 function readTime_(b) {
   const a = auth_(b);
   if (!a || a.admin) return { ok: false, error: 'auth' };
+  if (a.restricted) return { ok: false, error: 'restricted' };
   const sure = Math.floor(Number(b.sure));
   let add = Math.floor(Number(b.saniye));
   if (!(sure >= 1 && sure <= 114) || !(add > 0)) return { ok: false, error: 'bad_request' };
@@ -574,6 +619,94 @@ function eduNotesFor_(code, k) {
   return { ok: true, notes: out };
 }
 
+// ------------------------------------------------------------------ Kitap: kişisel notlar (planlar)
+
+function plansFor_(code) {
+  const sh = sheet_(S_PLANS);
+  const last = sh.getLastRow();
+  const out = [];
+  const from = Utilities.formatDate(new Date(Date.now() - 60 * 864e5), TZ, 'yyyy-MM-dd');
+  if (last >= 2) {
+    sh.getRange(2, 1, last - 1, 6).getDisplayValues().forEach(function (r, i) {
+      if (normCode_(r[0]) !== code || r[2] < from) return;
+      out.push({ row: i + 2, date: r[2], time: r[3], not: r[4], at: r[5] });
+    });
+  }
+  out.sort(function (x, y) { return (x.date + x.time) < (y.date + y.time) ? -1 : 1; });
+  return { ok: true, plans: out };
+}
+
+function planCheck_(sh, row, code, at) {
+  if (!(row >= 2) || row > sh.getLastRow()) return false;
+  const v = sh.getRange(row, 1, 1, 6).getDisplayValues()[0];
+  return normCode_(v[0]) === code && v[5] === String(at || '');
+}
+
+function planSave_(b) {
+  const a = auth_(b);
+  if (!a || a.admin) return { ok: false, error: 'auth' };
+  const date = String(b.date || '');
+  const time = String(b.time || '');
+  const text = String(b.not || '').trim().slice(0, NOTE_MAX);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || (time && !/^\d{2}:\d{2}$/.test(time)) || !text) return { ok: false, error: 'bad_request' };
+  const sh = sheet_(S_PLANS);
+  const row = Math.floor(Number(b.row)) || 0;
+  const vals = [[a.code, a.name, date, time, text, stamp_()]];
+  if (row) {
+    if (!planCheck_(sh, row, a.code, b.at)) return { ok: false, error: 'changed' };
+    setTexts_(sh.getRange(row, 1, 1, 6), vals);
+  } else {
+    setTexts_(sh.getRange(Math.max(sh.getLastRow(), 1) + 1, 1, 1, 6), vals);
+  }
+  return plansFor_(a.code);
+}
+
+function planDelete_(b) {
+  const a = auth_(b);
+  if (!a || a.admin) return { ok: false, error: 'auth' };
+  const sh = sheet_(S_PLANS);
+  const row = Math.floor(Number(b.row)) || 0;
+  if (planCheck_(sh, row, a.code, b.at)) sh.deleteRow(row);
+  return plansFor_(a.code);
+}
+
+// ------------------------------------------------------------------ hata raporları (iki uygulama)
+
+/** Uygulama çöktüğünde sessizce gönderilir; yöneticiler Üye Yönetim'de görür. */
+function crash_(b) {
+  const c = CacheService.getScriptCache();
+  const n = Number(c.get('crashes') || 0);
+  if (n >= 60) return { ok: false, error: 'busy' };
+  c.put('crashes', String(n + 1), 600);
+  const report = String(b.report || '').trim().slice(0, 4000);
+  if (!report) return { ok: false, error: 'bad_request' };
+  let code = normCode_(b.code).slice(0, 60);
+  let name = '';
+  const a = auth_(b);
+  if (a) name = a.name; else if (code) code += ' (doğrulanmadı)';
+  const sh = sheet_(S_CRASH);
+  setTexts_(sh.getRange(Math.max(sh.getLastRow(), 1) + 1, 1, 1, 7),
+    [[stamp_(), appLabel_(b), code, name, String(b.version || '').slice(0, 40), String(b.device || '').slice(0, 120), report]]);
+  return { ok: true };
+}
+
+function crashes_(b) {
+  const a = adminAuth_(b);
+  if (!a) return { ok: false, error: 'auth' };
+  const sh = sheet_(S_CRASH);
+  const last = sh.getLastRow();
+  const out = [];
+  if (last >= 2) {
+    const start = Math.max(2, last - 99);
+    const rows = sh.getRange(start, 1, last - start + 1, 7).getDisplayValues();
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const r = rows[i];
+      out.push({ at: r[0], app: r[1], code: r[2], name: r[3], version: r[4], device: r[5], report: r[6] });
+    }
+  }
+  return { ok: true, crashes: out };
+}
+
 // ------------------------------------------------------------------ Üye Yönetim
 
 function dailyMap_() {
@@ -637,14 +770,22 @@ function adminData_(b) {
         passive: isPassive_(v[4]), registered: String(v[5]).trim().length > 0, since: v[6], last: v[7],
         total: parseDur_(v[8]), count: Number(v[9]) || 0, today: d.today || 0, week: d.week || 0,
         read: readSum[code] || 0, notes: noteCount[code] || 0, eduNotes: eduByPerson[code] || 0,
+        restricted: isRestricted_(v[10]),
       });
     });
   }
   const events = events_(null, tz, 120, EDU_FUTURE_DAYS, true);
   events.forEach(function (e) { e.notes = eduCount[e.key] || 0; });
+  const cs = sheet_(S_CRASH);
+  const weekAgo = Utilities.formatDate(new Date(Date.now() - 7 * 864e5), TZ, 'yyyy-MM-dd');
+  let crashCount = 0;
+  if (cs.getLastRow() >= 2) {
+    const st = Math.max(2, cs.getLastRow() - 199);
+    cs.getRange(st, 1, cs.getLastRow() - st + 1, 1).getDisplayValues().forEach(function (r) { if (r[0] >= weekAgo) crashCount++; });
+  }
   return {
     ok: true, name: a.name, today: today, people: people, events: events,
-    notices: notices_(null, tz, today, true),
+    notices: notices_(null, tz, today, true), crashCount: crashCount,
   };
 }
 
@@ -662,8 +803,9 @@ function personDetail_(b) {
     person: {
       row: row, code: code, name: p.name, group: p.group, pwd: p.pwd, passive: p.passive, registered: p.device.length > 0,
       since: p.since, last: p.last, total: p.total, count: p.count, today: d.today || 0, week: d.week || 0,
+      restricted: p.restricted,
     },
-    days: [], reading: [], marks: [], eduNotes: [], logins: [],
+    days: [], reading: [], marks: [], eduNotes: [], logins: [], plans: plansFor_(code).plans,
   };
   // Son 14 gün
   const from = Utilities.formatDate(new Date(Date.now() - 13 * 864e5), TZ, 'yyyy-MM-dd');
@@ -717,16 +859,31 @@ function personSave_(b) {
     if (other) return { ok: false, error: 'exists' };
     row = Math.max(sh.getLastRow(), 1) + 1;
     setTexts_(sh.getRange(row, 1, 1, 5), [[code, name, group, pwd, b.passive ? 'Pasif' : 'Aktif']]);
+    setText_(sh.getRange(row, C_ACCESS), b.restricted ? 'Göremez' : 'Görebilir');
     addLog_(a.code, a.name, 'Üye Yönetim', 'Kişi ekledi: ' + code);
   } else {
     row = findRow_(sh, orig, C_CODE);
     if (!row) return { ok: false, error: 'not_found' };
     if (other && other !== row) return { ok: false, error: 'exists' };
     setTexts_(sh.getRange(row, 1, 1, 5), [[code, name, group, pwd, b.passive ? 'Pasif' : 'Aktif']]);
+    setText_(sh.getRange(row, C_ACCESS), b.restricted ? 'Göremez' : 'Görebilir');
     if (b.resetDevice) setText_(sh.getRange(row, C_DEVICE), '');
     addLog_(a.code, a.name, 'Üye Yönetim', 'Kişiyi düzenledi: ' + code);
   }
   return { ok: true, code: code };
+}
+
+/** Görebilir / Göremez tiki (yalnızca yöneticiler). */
+function access_(b) {
+  const a = adminAuth_(b);
+  if (!a) return { ok: false, error: 'auth' };
+  const sh = sheet_(S_PEOPLE);
+  const code = normCode_(b.target);
+  const row = findRow_(sh, code, C_CODE);
+  if (!row) return { ok: false, error: 'not_found' };
+  setText_(sh.getRange(row, C_ACCESS), b.restricted ? 'Göremez' : 'Görebilir');
+  addLog_(a.code, a.name, 'Üye Yönetim', (b.restricted ? 'Göremez yaptı: ' : 'Görebilir yaptı: ') + code);
+  return { ok: true };
 }
 
 function eventSave_(b) {
@@ -931,7 +1088,7 @@ function kurulum() {
 function kuranOnbellekTemizle() {
   const c = CacheService.getScriptCache();
   c.remove('kidx');
-  for (let s = 1; s <= 114; s++) c.remove('ks' + s + 'n');
+  for (let s = 1; s <= 114; s++) { c.remove('ks' + s + 'n'); c.remove('q2s' + s + 'n'); }
 }
 
 function ensureSheets_() {
@@ -939,7 +1096,7 @@ function ensureSheets_() {
   if (!ss) throw new Error('Bu betik bir E-Tabloya bağlı değil. E-Tabloyu açıp Uzantılar > Apps Script ile açılan betiğe yapıştırın.');
   const today = Utilities.formatDate(new Date(), TZ, 'dd.MM.yyyy');
   const adminCode = 'Y-' + Math.floor(100000 + Math.random() * 900000);
-  const pHead = ['Yetki kodu', 'Ad Soyad', 'Grup (isteğe bağlı)', 'Şifre', 'Durum (Aktif / Pasif)', 'Cihaz (uygulama yazar)', 'Kayıt', 'Son giriş', 'Toplam süre (s:dk:sn)', 'Giriş sayısı'];
+  const pHead = ['Yetki kodu', 'Ad Soyad', 'Grup (isteğe bağlı)', 'Şifre', 'Durum (Aktif / Pasif)', 'Cihaz (uygulama yazar)', 'Kayıt', 'Son giriş', 'Toplam süre (s:dk:sn)', 'Giriş sayısı', 'Erişim (Görebilir / Göremez)'];
   const defs = [
     [S_PEOPLE, pHead, ['DENEME1', 'Deneme Kişi', '', '', 'Aktif'], true],
     [S_ADMINS, pHead.map(function (h, i) { return i === 2 ? 'Görev (isteğe bağlı)' : h; }), [adminCode, 'Yönetici', '', '', 'Aktif'], true],
@@ -956,12 +1113,20 @@ function ensureSheets_() {
     [S_ENOTES, ['Tarih-saat', 'Kod', 'Ad', 'Eğitim tarihi', 'Eğitim', 'Not'], null, false],
     [S_LOG, ['Tarih-saat', 'Kod', 'Ad', 'Uygulama', 'Olay'], null, false],
     [S_DAILY, ['Tarih', 'Kod', 'Ad', 'Süre (s:dk:sn)', 'Saniye'], null, false],
+    [S_PLANS, ['Kod', 'Ad', 'Tarih', 'Saat', 'Not', 'Yazıldı'], null, true],
+    [S_CRASH, ['Tarih-saat', 'Uygulama', 'Kod', 'Ad', 'Sürüm', 'Cihaz', 'Rapor'], null, false],
   ];
   defs.forEach(function (d) {
     let sh = null;
     const all = ss.getSheets();
     for (let i = 0; i < all.length; i++) if (key_(all[i].getName()) === key_(d[0])) sh = all[i];
-    if (sh) return; // var olan sayfaya dokunma
+    if (sh) {
+      // Sonradan eklenen sütun başlığı (ör. "Erişim") eksikse yalnızca başlığı yaz
+      if (d[3] && d[1].length === P_COLS && !String(sh.getRange(1, C_ACCESS).getDisplayValue()).trim()) {
+        sh.getRange(1, C_ACCESS).setValue(d[1][C_ACCESS - 1]).setFontWeight('bold');
+      }
+      return; // var olan sayfanın verisine dokunma
+    }
     sh = ss.insertSheet(d[0]);
     sh.getRange(1, 1, 1, d[1].length).setValues([d[1]]).setFontWeight('bold');
     sh.setFrozenRows(1);

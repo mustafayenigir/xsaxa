@@ -36,6 +36,7 @@ class AdminPages(
     private val io: Executor,
     private val reload: () -> Unit,
     private val openPerson: (String) -> Unit,
+    private val openCrashes: () -> Unit,
     private val onAuthError: () -> Unit
 ) {
     var data: AdminData = AdminData.EMPTY
@@ -109,6 +110,13 @@ class AdminPages(
             a.getString(R.string.adm_today_in, all.count { it.last.startsWith(today) }),
             a.getString(R.string.adm_no_pwd, all.count { it.pwd.isEmpty() })
         ), Ui.matchWrap())
+        if (data.crashCount > 0) {
+            box.addView(Ui.text(a, a.getString(R.string.adm_crash_banner, data.crashCount), 14f, 0xFF8A4B00.toInt(), true).apply {
+                background = Ui.rounded(a, 0x33FFB300, 14, 0x99FFB300.toInt(), 1)
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                setOnClickListener { openCrashes() }
+            }, Ui.matchWrap(10, a))
+        }
         val search = Ui.input(a, a.getString(R.string.adm_search), query)
         box.addView(search, Ui.matchWrap(10, a))
         box.addView(addButton(R.string.adm_add_person) { editPerson(null) }, Ui.matchWrap(8, a))
@@ -149,7 +157,8 @@ class AdminPages(
         val col = Ui.vbox(a)
         val top = Ui.hbox(a)
         top.addView(Ui.text(a, p.name.ifBlank { p.code }, 16f, bold = true).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }, Ui.weight1())
-        if (p.passive) top.addView(Ui.chip(a, a.getString(R.string.adm_passive), Ui.withAlpha(red, 40), red))
+        if (p.restricted) top.addView(Ui.chip(a, a.getString(R.string.adm_restricted), 0x33FFB300, 0xFF8A4B00.toInt()), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(4) })
+        if (p.passive) top.addView(Ui.chip(a, a.getString(R.string.adm_passive), Ui.withAlpha(red, 40), red), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(4) })
         col.addView(top)
         col.addView(Ui.muted(a, a.getString(R.string.adm_code_line, p.code) + if (p.group.isNotEmpty()) "  ·  " + p.group else "", 13f), Ui.matchWrap(2, a))
         col.addView(Ui.text(a, if (p.pwd.isNotEmpty()) a.getString(R.string.adm_pwd_line, p.pwd) else a.getString(R.string.adm_pwd_none), 13f,
@@ -219,6 +228,28 @@ class AdminPages(
         line(R.string.adm_f_week, Format.duration(p.week))
         line(R.string.adm_f_total, Format.duration(p.total))
         line(R.string.adm_f_read, Format.duration(p.read))
+        // Görebilir / Göremez tiki
+        val access = SwitchMaterial(a).apply {
+            setText(R.string.adm_access)
+            isChecked = !p.restricted
+            setTextColor(Ui.color(a, R.color.on_background))
+            minHeight = dp(48)
+        }
+        access.setOnCheckedChangeListener { v, on ->
+            v.isEnabled = false
+            call(JSONObject().put("action", "access").put("target", p.code).put("restricted", !on)) { r ->
+                v.isEnabled = true
+                if (r?.optBoolean("ok") == true) {
+                    Toast.makeText(a, if (on) R.string.adm_access_on else R.string.adm_access_off, Toast.LENGTH_SHORT).show()
+                    reload()
+                } else {
+                    v.setOnCheckedChangeListener(null); v.isChecked = !on
+                    Toast.makeText(a, errText(r), Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        info.addView(access, Ui.matchWrap(8, a))
+        info.addView(Ui.muted(a, a.getString(R.string.adm_access_desc), 12f))
         val btns = Ui.hbox(a)
         btns.addView(MaterialButton(a).apply {
             setText(R.string.adm_edit)
@@ -296,6 +327,14 @@ class AdminPages(
             if (n.isNotBlank()) v.addView(Ui.text(a, n, 14f), Ui.matchWrap(4, a))
             v
         }
+        section(R.string.adm_s_plans, R.string.adm_s_plans_empty, r.optJSONArray("plans")) { d ->
+            val date = Format.isoDate(d.optString("date"))
+            val v = Ui.vbox(a).apply { setPadding(0, dp(8), 0, dp(8)) }
+            v.addView(Ui.text(a, (if (date != null) Format.dayLong(date) else d.optString("date")) +
+                d.optString("time").let { if (it.isNotEmpty()) "  ·  $it" else "" }, 13f, 0xFFE08600.toInt(), true))
+            v.addView(Ui.text(a, d.optString("not"), 15f), Ui.matchWrap(2, a))
+            v
+        }
         section(R.string.adm_s_edu, R.string.adm_s_edu_empty, r.optJSONArray("eduNotes")) { d ->
             val v = Ui.vbox(a).apply { setPadding(0, dp(8), 0, dp(8)) }
             val date = Format.isoDate(d.optString("date"))
@@ -332,6 +371,13 @@ class AdminPages(
             minHeight = dp(48)
         }
         box.addView(active, Ui.matchWrap(8, a))
+        val see = SwitchMaterial(a).apply {
+            setText(R.string.adm_access)
+            isChecked = p?.restricted != true
+            setTextColor(Ui.color(a, R.color.on_background))
+            minHeight = dp(48)
+        }
+        box.addView(see, Ui.matchWrap())
         val reset = CheckBox(a).apply {
             setText(R.string.adm_f_reset)
             setTextColor(Ui.color(a, R.color.on_background))
@@ -359,6 +405,7 @@ class AdminPages(
             msg.setText(R.string.saving)
             val body = JSONObject().put("action", "personSave").put("orig", p?.code ?: "").put("pcode", c).put("name", n)
                 .put("group", group.text.toString().trim()).put("ppwd", w).put("passive", !active.isChecked).put("resetDevice", reset.isChecked)
+                .put("restricted", !see.isChecked)
             call(body) { r ->
                 btn.isEnabled = true
                 if (r?.optBoolean("ok") == true) {
@@ -608,6 +655,39 @@ class AdminPages(
                     Toast.makeText(a, R.string.saved, Toast.LENGTH_SHORT).show()
                     reload()
                 } else msg.text = errText(r)
+            }
+        }
+    }
+
+    // ============================================================ Hata raporları
+
+    fun renderCrashes(host: FrameLayout) {
+        val box = scrollPage(host)
+        box.addView(Ui.muted(a, a.getString(R.string.adm_crash_info), 13f))
+        val list = Ui.vbox(a)
+        box.addView(list, Ui.matchWrap(8, a))
+        list.addView(Ui.muted(a, a.getString(R.string.loading), 13f))
+        call(JSONObject().put("action", "crashes")) { r ->
+            list.removeAllViews()
+            val arr = r?.optJSONArray("crashes")
+            if (r == null || !r.optBoolean("ok")) { list.addView(Ui.muted(a, a.getString(R.string.err_network), 13f)); return@call }
+            if (arr == null || arr.length() == 0) { list.addView(Ui.muted(a, a.getString(R.string.adm_crash_empty), 14f)); return@call }
+            for (i in 0 until arr.length()) {
+                val c = arr.optJSONObject(i) ?: continue
+                val card = Ui.vbox(a).apply { background = Ui.card(a); setPadding(dp(14), dp(10), dp(14), dp(10)) }
+                val who = c.optString("name").ifBlank { c.optString("code").ifBlank { "—" } }
+                card.addView(Ui.text(a, who + "  ·  " + c.optString("app"), 15f, bold = true))
+                card.addView(Ui.muted(a, listOf(Format.stamp(c.optString("at")), c.optString("version").let { if (it.isNotEmpty()) "sürüm $it" else "" },
+                    c.optString("device")).filter { it.isNotEmpty() }.joinToString("  ·  "), 12f))
+                val full = c.optString("report")
+                val short = full.lines().take(4).joinToString("\n")
+                val body = Ui.text(a, short, 12f).apply { typeface = android.graphics.Typeface.MONOSPACE }
+                card.addView(body, Ui.matchWrap(6, a))
+                if (full.length > short.length) {
+                    var open = false
+                    card.setOnClickListener { open = !open; body.text = if (open) full else short }
+                }
+                list.addView(card, Ui.matchWrap().apply { bottomMargin = dp(8) })
             }
         }
     }
