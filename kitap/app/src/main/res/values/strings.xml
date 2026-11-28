@@ -84,6 +84,7 @@
     <string name="home_today_empty">Bugün eğitim yok.</string>
     <string name="home_tomorrow">Yarınki eğitimler</string>
     <string name="home_tomorrow_empty">Yarın eğitim yok.</string>
+    <string name="home_closed">Şu an görüntülenecek içerik bulunmuyor.</string>
     <string name="home_sites">İçerikler</string>
     <string name="home_sites_empty">Henüz içerik eklenmedi.</string>
     <string name="site_info_none">Bu içerik için açıklama yok.</string>

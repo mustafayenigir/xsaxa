@@ -35,6 +35,11 @@ class HomePage(
         if (loading) box.addView(Ui.muted(c, c.getString(R.string.loading), 13f), Ui.matchWrap(6, c))
 
         val today = LocalDate.now()
+        if (!h.access) {
+            // Göremez: hiçbir içerik gösterilmez
+            box.addView(empty(R.string.home_closed), Ui.matchWrap(16, c))
+            return
+        }
         eventSection(box, R.string.home_today, h.eventsOn(today), true)
         eventSection(box, R.string.home_tomorrow, h.eventsOn(today.plusDays(1)), false)
         if (h.access) planSection(box, h)

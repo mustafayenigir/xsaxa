@@ -285,13 +285,11 @@ function home_(b) {
   const keys = [a.code];
   if (a.group) a.group.split(/[,;]+/).map(normCode_).filter(String).forEach(function (g) { keys.push(g); });
   const events = events_(keys, tz, EDU_PAST_DAYS, EDU_FUTURE_DAYS, false);
-  // Göremez: eğitimin yalnızca adı, günü ve saati gider; metni ve Zoom linki gitmez
-  if (a.restricted) events.forEach(function (e) { e.zoom = ''; e.desc = ''; });
-  // Göremez: yalnızca eğitimlerin adı/günü/saati; içerik, bildirim ve kişisel notlar hiç gitmez
+  // Göremez: HİÇBİR ŞEY gitmez (meal, içerik, eğitimler ve metinleri, bildirimler, kişisel notlar)
   return {
     ok: true, name: a.name, today: today, access: !a.restricted,
     links: a.restricted ? [] : links_(),
-    events: events,
+    events: a.restricted ? [] : events,
     notices: a.restricted ? [] : notices_(keys, tz, today, false),
     plans: a.restricted ? [] : plansFor_(a.code).plans,
   };

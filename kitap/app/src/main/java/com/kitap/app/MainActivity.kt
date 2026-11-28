@@ -626,13 +626,14 @@ class MainActivity : AppCompatActivity() {
     private fun applyAccess() {
         if (admin) return
         bottomNav.menu.findItem(R.id.nav_kitap)?.isVisible = home.access
+        bottomNav.menu.findItem(R.id.nav_calendar)?.isVisible = home.access
         // Göremez: bildirimler ve kişisel notlar da tamamen gizli
         bellBox.visibility = if (home.access) View.VISIBLE else View.GONE
         calendarPage.findViewById<View>(R.id.planFab)?.visibility = if (home.access) View.VISIBLE else View.GONE
         if (!home.access) { hideNotices(); Reminders.cancelAll(this) }
         if (menuAccess != home.access) { menuAccess = home.access; buildMenu() }
         if (!home.access && page == Page.KITAP) showPage(Page.HOME)
-        if (!home.access && page == Page.SITE) showPage(Page.HOME)
+        if (!home.access && (page == Page.SITE || page == Page.CALENDAR || page == Page.EVENT)) showPage(Page.HOME)
     }
 
     private fun openPlan(p: Plan?) {
@@ -773,6 +774,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openEvent(ev: Event) {
+        if (!home.access) return
         ev.plan?.let { return openPlan(it) }
         if (page != Page.EVENT) eventReturn = if (page == Page.CALENDAR) Page.CALENDAR else Page.HOME
         savedEvent = ev
@@ -905,7 +907,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (home.access) item(R.drawable.ic_book_light, getString(R.string.nav_kitap)) { showPage(Page.KITAP) }
             item(R.drawable.ic_home_light, getString(R.string.nav_home)) { showPage(Page.HOME) }
-            item(R.drawable.ic_calendar_light, getString(R.string.nav_calendar)) { showPage(Page.CALENDAR) }
+            if (home.access) item(R.drawable.ic_calendar_light, getString(R.string.nav_calendar)) { showPage(Page.CALENDAR) }
             item(R.drawable.ic_settings_light, getString(R.string.nav_settings)) { showPage(Page.SETTINGS) }
             if (home.access) item(R.drawable.ic_bell, getString(R.string.notices)) { showNotices() }
             item(R.drawable.ic_power, getString(R.string.menu_black)) { enterBlackMode() }
